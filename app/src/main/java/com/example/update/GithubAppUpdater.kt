@@ -8,6 +8,8 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -17,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -40,7 +42,8 @@ object GithubAppUpdater {
 
     private const val OWNER = "sahandse"
     private const val REPO = "gheymatbazar"
-    private const val LATEST_URL = "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
+    private const val RELEASES_URL = "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=10"
+    private const val MIN_APK_BYTES = 1_000_000L
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(12, TimeUnit.SECONDS)
@@ -50,7 +53,7 @@ object GithubAppUpdater {
     suspend fun checkForUpdate(): UpdateCheckResult = withContext(Dispatchers.IO) {
         runCatching {
             val request = Request.Builder()
-                .url(LATEST_URL)
+                .url(RELEASES_URL)
                 .header("Accept", "application/vnd.github+json")
                 .header("User-Agent", "GheymatBazar/${BuildConfig.VERSION_NAME}")
                 .build()
@@ -63,52 +66,67 @@ object GithubAppUpdater {
                 if (body.isBlank()) {
                     return@withContext UpdateCheckResult.Failed("پاسخ خالی از GitHub")
                 }
-                val json = JSONObject(body)
-                val tag = json.optString("tag_name").ifBlank {
-                    return@withContext UpdateCheckResult.Failed("تگ نسخه یافت نشد")
-                }
-                val versionName = tag.removePrefix("v").trim()
-                val assets = json.optJSONArray("assets")
-                    ?: return@withContext UpdateCheckResult.Failed("فایل انتشار یافت نشد")
 
-                var apkUrl: String? = null
-                var apkSize = 0L
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    val name = asset.optString("name")
-                    if (name.endsWith(".apk", ignoreCase = true) &&
-                        name.contains("PRODUCTION", ignoreCase = true)
-                    ) {
-                        apkUrl = asset.optString("browser_download_url")
-                        apkSize = asset.optLong("size")
-                        break
-                    }
-                }
-                if (apkUrl.isNullOrBlank()) {
-                    for (i in 0 until assets.length()) {
-                        val asset = assets.getJSONObject(i)
+                val releases = JSONArray(body)
+                var newestInstallable: GithubReleaseInfo? = null
+
+                for (i in 0 until releases.length()) {
+                    val json = releases.getJSONObject(i)
+                    if (json.optBoolean("draft") || json.optBoolean("prerelease")) continue
+
+                    val tag = json.optString("tag_name").trim()
+                    if (tag.isBlank()) continue
+                    val versionName = tag.removePrefix("v").trim()
+                    if (versionName.isBlank()) continue
+
+                    val assets = json.optJSONArray("assets") ?: continue
+                    var selectedUrl: String? = null
+                    var selectedSize = 0L
+
+                    // Prefer a production APK so debug/test artifacts are never offered to users.
+                    for (index in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(index)
                         val name = asset.optString("name")
-                        if (name.endsWith(".apk", ignoreCase = true)) {
-                            apkUrl = asset.optString("browser_download_url")
-                            apkSize = asset.optLong("size")
+                        if (name.endsWith(".apk", ignoreCase = true) &&
+                            name.contains("PRODUCTION", ignoreCase = true)
+                        ) {
+                            selectedUrl = asset.optString("browser_download_url")
+                            selectedSize = asset.optLong("size")
                             break
                         }
                     }
-                }
-                if (apkUrl.isNullOrBlank()) {
-                    return@withContext UpdateCheckResult.Failed("APK در ریلیز GitHub نیست")
+
+                    // Backward compatibility for older releases that only contain one APK.
+                    if (selectedUrl.isNullOrBlank()) {
+                        for (index in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(index)
+                            val name = asset.optString("name")
+                            if (name.endsWith(".apk", ignoreCase = true)) {
+                                selectedUrl = asset.optString("browser_download_url")
+                                selectedSize = asset.optLong("size")
+                                break
+                            }
+                        }
+                    }
+
+                    if (selectedUrl.isNullOrBlank() || selectedSize < MIN_APK_BYTES) continue
+                    if (!selectedUrl.startsWith("https://github.com/")) continue
+
+                    newestInstallable = GithubReleaseInfo(
+                        tagName = tag,
+                        versionName = versionName,
+                        releaseName = json.optString("name").ifBlank { tag },
+                        apkUrl = selectedUrl,
+                        apkSizeBytes = selectedSize,
+                        releaseNotes = json.optString("body").orEmpty()
+                    )
+                    break
                 }
 
-                val release = GithubReleaseInfo(
-                    tagName = tag,
-                    versionName = versionName,
-                    releaseName = json.optString("name").ifBlank { tag },
-                    apkUrl = apkUrl,
-                    apkSizeBytes = apkSize,
-                    releaseNotes = json.optString("body").orEmpty()
-                )
+                val release = newestInstallable
+                    ?: return@withContext UpdateCheckResult.Failed("هنوز APK قابل نصب در Releaseهای GitHub وجود ندارد")
 
-                if (isRemoteNewer(versionName, BuildConfig.VERSION_NAME)) {
+                if (isRemoteNewer(release.versionName, BuildConfig.VERSION_NAME)) {
                     UpdateCheckResult.Available(release)
                 } else {
                     UpdateCheckResult.UpToDate(BuildConfig.VERSION_NAME)
@@ -137,13 +155,18 @@ object GithubAppUpdater {
             .split(".")
             .map { it.filter(Char::isDigit).toIntOrNull() ?: 0 }
 
-    /**
-     * Downloads APK via DownloadManager into app-external files, then prompts install.
-     */
+    fun formatSize(bytes: Long): String {
+        if (bytes <= 0L) return "—"
+        val mb = bytes.toDouble() / (1024.0 * 1024.0)
+        return String.format(java.util.Locale.US, "%.1f MB", mb)
+    }
+
     fun downloadAndInstall(
         context: Context,
         release: GithubReleaseInfo,
         onStarted: (downloadId: Long) -> Unit,
+        onProgress: (Int) -> Unit = {},
+        onReadyToInstall: () -> Unit = {},
         onError: (String) -> Unit
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
@@ -154,42 +177,58 @@ object GithubAppUpdater {
         }
 
         try {
-            val updatesDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
-            if (!updatesDir.exists()) updatesDir.mkdirs()
-            val fileName = "gheymatbazar-${release.versionName}.apk"
+            val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                ?: run {
+                    onError("حافظه دانلود در دسترس نیست")
+                    return
+                }
+            val updatesDir = File(baseDir, "updates").apply { mkdirs() }
+
+            // Keep only the APK currently being downloaded.
+            updatesDir.listFiles()?.filter { it.extension.equals("apk", true) }?.forEach { it.delete() }
+
+            val fileName = "gheymatbazar-${release.versionName}-PRODUCTION.apk"
             val destFile = File(updatesDir, fileName)
-            if (destFile.exists()) destFile.delete()
 
             val request = DownloadManager.Request(release.apkUrl.toUri())
                 .setTitle("به‌روزرسانی قیمت بازار ${release.versionName}")
-                .setDescription("در حال دانلود از GitHub…")
+                .setDescription("در حال دانلود نسخه رسمی…")
+                .setMimeType("application/vnd.android.package-archive")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationUri(Uri.fromFile(destFile))
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
 
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val downloadId = dm.enqueue(request)
-            onStarted(downloadId)
 
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
                     val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: return
-                    if (id != downloadId) return
-                    runCatching { context.unregisterReceiver(this) }
-                    val query = DownloadManager.Query().setFilterById(downloadId)
+                    if (id <= 0L) return
+                    val query = DownloadManager.Query().setFilterById(id)
                     dm.query(query)?.use { cursor ->
-                        if (!cursor.moveToFirst()) {
-                            onError("دانلود کامل نشد")
+                        if (!cursor.moveToFirst()) return
+                        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        if (status == DownloadManager.STATUS_FAILED) {
+                            runCatching { context.unregisterReceiver(this) }
+                            onError("دانلود نسخه جدید ناموفق بود")
                             return
                         }
-                        val statusIdx = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                        val status = cursor.getInt(statusIdx)
-                        if (status != DownloadManager.STATUS_SUCCESSFUL) {
-                            onError("دانلود ناموفق بود")
-                            return
-                        }
+                        if (status != DownloadManager.STATUS_SUCCESSFUL) return
                     }
+                    runCatching { context.unregisterReceiver(this) }
+
+                    val minimumExpected = if (release.apkSizeBytes > 0L) {
+                        (release.apkSizeBytes * 0.95).toLong()
+                    } else MIN_APK_BYTES
+                    if (!destFile.exists() || destFile.length() < minimumExpected) {
+                        destFile.delete()
+                        onError("فایل دانلودشده ناقص است؛ دوباره تلاش کنید")
+                        return
+                    }
+
+                    onProgress(100)
+                    onReadyToInstall()
                     installApk(context, destFile, onError)
                 }
             }
@@ -201,9 +240,42 @@ object GithubAppUpdater {
                 filter,
                 ContextCompat.RECEIVER_NOT_EXPORTED
             )
+
+            val downloadId = dm.enqueue(request)
+            onStarted(downloadId)
+            observeProgress(dm, downloadId, onProgress)
         } catch (e: Exception) {
             onError(e.message ?: "شروع دانلود ممکن نیست")
         }
+    }
+
+    private fun observeProgress(
+        dm: DownloadManager,
+        downloadId: Long,
+        onProgress: (Int) -> Unit
+    ) {
+        val handler = Handler(Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                var keepPolling = false
+                runCatching {
+                    dm.query(DownloadManager.Query().setFilterById(downloadId))?.use { cursor ->
+                        if (!cursor.moveToFirst()) return@use
+                        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        val downloaded = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                        val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                        if (total > 0L) {
+                            onProgress(((downloaded * 100L) / total).toInt().coerceIn(0, 100))
+                        }
+                        keepPolling = status == DownloadManager.STATUS_PENDING ||
+                            status == DownloadManager.STATUS_RUNNING ||
+                            status == DownloadManager.STATUS_PAUSED
+                    }
+                }
+                if (keepPolling) handler.postDelayed(this, 600L)
+            }
+        }
+        handler.post(runnable)
     }
 
     fun openUnknownSourcesSettings(context: Context) {
@@ -217,13 +289,13 @@ object GithubAppUpdater {
     fun openReleasePage(context: Context) {
         val intent = Intent(
             Intent.ACTION_VIEW,
-            "https://github.com/$OWNER/$REPO/releases/latest".toUri()
+            "https://github.com/$OWNER/$REPO/releases".toUri()
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
 
     private fun installApk(context: Context, file: File, onError: (String) -> Unit) {
-        if (!file.exists() || file.length() < 1024) {
+        if (!file.exists() || file.length() < MIN_APK_BYTES) {
             onError("فایل APK نامعتبر است")
             return
         }
@@ -233,10 +305,12 @@ object GithubAppUpdater {
                 "${context.packageName}.fileprovider",
                 file
             )
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
+            val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                data = uri
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+                putExtra(Intent.EXTRA_RETURN_RESULT, false)
             }
             context.startActivity(intent)
         } catch (e: Exception) {
