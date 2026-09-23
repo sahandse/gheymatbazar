@@ -79,10 +79,11 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
-    var isConverterVisible by remember { mutableStateOf(true) }
+    // Calculator/converter and chart stay off until the user opts in
+    var isConverterVisible by remember { mutableStateOf(false) }
     var rateToShare by remember { mutableStateOf<MarketRateEntity?>(null) }
     var selectedChartRateId by remember { mutableStateOf<String?>(null) }
-    var isChartVisible by remember { mutableStateOf(true) }
+    var isChartVisible by remember { mutableStateOf(false) }
 
     PullToRefreshBox(
         isRefreshing = uiState.isLoading && uiState.rates.isNotEmpty(),
@@ -271,7 +272,7 @@ fun HomeScreen(
                             selectedCategory = uiState.selectedCategory,
                             onCategorySelected = { cat ->
                                 selectedChartRateId = null
-                                isChartVisible = true
+                                isChartVisible = false
                                 onCategorySelected(cat)
                             }
                         )
@@ -328,10 +329,7 @@ fun HomeScreen(
                         MarketRateCard(
                             rate = rate,
                             flashType = flashType,
-                            onClick = { 
-                                selectedChartRateId = rate.id
-                                isChartVisible = true
-                            },
+                            onClick = { onRateClick(rate.id) },
                             onShareClick = { r -> rateToShare = r }
                         )
                     }
