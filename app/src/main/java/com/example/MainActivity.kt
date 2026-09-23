@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -16,13 +17,19 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.app.ActivityCompat
@@ -34,6 +41,9 @@ import com.example.ui.screens.DetailScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.theme.LocalAppPalette
 import com.example.ui.theme.MyApplicationTheme
+import com.example.update.GithubAppUpdater
+import com.example.update.GithubReleaseInfo
+import com.example.update.UpdateCheckResult
 import com.example.util.PriceAlertNotifier
 
 class MainActivity : ComponentActivity() {
@@ -84,7 +94,19 @@ class MainActivity : ComponentActivity() {
 fun MarketRatesApp(viewModel: MarketRatesViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val palette = LocalAppPalette.current
+    val context = LocalContext.current
     var isSplashVisible by remember { mutableStateOf(true) }
+    var availableUpdate by remember { mutableStateOf<GithubReleaseInfo?>(null) }
+    var updatePromptDismissed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isSplashVisible) {
+        if (!isSplashVisible && !updatePromptDismissed) {
+            when (val result = GithubAppUpdater.checkForUpdate()) {
+                is UpdateCheckResult.Available -> availableUpdate = result.release
+                else -> Unit
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -132,6 +154,63 @@ fun MarketRatesApp(viewModel: MarketRatesViewModel) {
                 }
             }
         }
+    }
+
+    val release = availableUpdate
+    if (!isSplashVisible && release != null && !updatePromptDismissed) {
+        AlertDialog(
+            onDismissRequest = {
+                updatePromptDismissed = true
+                availableUpdate = null
+            },
+            title = { Text("نسخه ${release.versionName} آماده است") },
+            text = {
+                Text(
+                    buildString {
+                        append("حجم: ${GithubAppUpdater.formatSize(release.apkSizeBytes)}")
+                        if (release.releaseNotes.isNotBlank()) {
+                            append("\n\n")
+                            append(release.releaseNotes.take(500))
+                        }
+                    }
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        GithubAppUpdater.downloadAndInstall(
+                            context = context,
+                            release = release,
+                            onStarted = {
+                                Toast.makeText(context, "دانلود آپدیت شروع شد", Toast.LENGTH_SHORT).show()
+                                updatePromptDismissed = true
+                                availableUpdate = null
+                            },
+                            onError = { error ->
+                                if (error == "ALLOW_UNKNOWN_SOURCES") {
+                                    GithubAppUpdater.openUnknownSourcesSettings(context)
+                                    Toast.makeText(context, "اجازه نصب برنامه را فعال کنید", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        )
+                    }
+                ) {
+                    Text("دانلود و نصب")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        updatePromptDismissed = true
+                        availableUpdate = null
+                    }
+                ) {
+                    Text("بعداً")
+                }
+            }
+        )
     }
 }
 
