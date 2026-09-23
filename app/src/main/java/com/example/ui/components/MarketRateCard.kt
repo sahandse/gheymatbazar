@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -10,15 +11,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -67,93 +71,107 @@ fun MarketRateCard(
         changePercent > 0 -> palette.increase
         else -> palette.decrease
     }
+    val accentBar = when {
+        isFavorite -> palette.accent
+        changePercent != null && changePercent > 0 -> palette.increase.copy(alpha = 0.55f)
+        changePercent != null && changePercent < 0 -> palette.decrease.copy(alpha = 0.55f)
+        else -> palette.border
+    }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(palette.card, palette.card.copy(alpha = 0.92f))
+                )
+            )
+            .border(1.dp, palette.border.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+            .background(flashBg)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(color = palette.accent.copy(alpha = 0.12f)),
+                onClick = onClick
+            )
+            .testTag("rate_card_${rate.id.lowercase()}")
+            .height(72.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(flashBg)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = ripple(color = palette.accent.copy(alpha = 0.12f)),
-                    onClick = onClick
-                )
-                .padding(vertical = 12.dp)
-                .testTag("rate_card_${rate.id.lowercase()}"),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(accentBar)
+        )
+
+        IconButton(
+            onClick = onToggleFavorite,
+            modifier = Modifier
+                .size(36.dp)
+                .testTag("favorite_${rate.id.lowercase()}")
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                IconButton(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .testTag("favorite_${rate.id.lowercase()}")
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        contentDescription = if (isFavorite) "حذف از علاقه‌مندی" else "افزودن به علاقه‌مندی",
-                        tint = if (isFavorite) palette.accent else palette.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(palette.cardSecondary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = MarketAssetHelper.getAssetIcon(rate.id),
-                        fontSize = 15.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column {
-                    Text(
-                        text = rate.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = palette.textPrimary,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
-                    )
-                    Text(
-                        text = rate.symbol,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.textSecondary,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = PersianFormatters.formatPrice(rate.price),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.textPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = if (changePercent != null) {
-                        PersianFormatters.formatPercentage(changePercent)
-                    } else {
-                        rate.unit
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = changeColor,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp
-                )
-            }
+            Icon(
+                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                contentDescription = if (isFavorite) "حذف از علاقه‌مندی" else "افزودن به علاقه‌مندی",
+                tint = if (isFavorite) palette.accent else palette.textSecondary,
+                modifier = Modifier.size(18.dp)
+            )
         }
-        HorizontalDivider(color = palette.border.copy(alpha = 0.5f), thickness = 0.5.dp)
+
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(palette.cardSecondary),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = MarketAssetHelper.getAssetIcon(rate.id),
+                fontSize = 16.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = rate.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = palette.textPrimary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+            Text(
+                text = rate.symbol,
+                style = MaterialTheme.typography.bodyMedium,
+                color = palette.textSecondary,
+                fontSize = 11.sp
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.padding(end = 14.dp)
+        ) {
+            Text(
+                text = PersianFormatters.formatPrice(rate.price),
+                style = MaterialTheme.typography.titleMedium,
+                color = palette.textPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
+            Text(
+                text = if (changePercent != null) {
+                    PersianFormatters.formatPercentage(changePercent)
+                } else {
+                    rate.unit
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = changeColor,
+                fontWeight = FontWeight.Medium,
+                fontSize = 11.sp
+            )
+        }
     }
 }

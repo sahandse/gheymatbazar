@@ -194,7 +194,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
                     contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item(key = "header") {
                         MarketRatesHeader(
