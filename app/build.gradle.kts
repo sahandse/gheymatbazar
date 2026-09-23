@@ -9,6 +9,14 @@ plugins {
   alias(libs.plugins.google.services)
 }
 
+val releaseKeystorePath = System.getenv("KEYSTORE_PATH")
+val releaseStorePassword = System.getenv("STORE_PASSWORD")
+val releaseKeyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+val releaseKeyPassword = System.getenv("KEY_PASSWORD")
+val hasReleaseSigning = !releaseKeystorePath.isNullOrBlank() &&
+  !releaseStorePassword.isNullOrBlank() &&
+  !releaseKeyPassword.isNullOrBlank()
+
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -24,12 +32,13 @@ android {
   }
 
   signingConfigs {
-    create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+    if (hasReleaseSigning) {
+      create("release") {
+        storeFile = file(releaseKeystorePath!!)
+        storePassword = releaseStorePassword
+        keyAlias = releaseKeyAlias
+        keyPassword = releaseKeyPassword
+      }
     }
   }
 
@@ -37,11 +46,14 @@ android {
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
+      isDebuggable = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      if (hasReleaseSigning) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
     debug {
-      // Use Android's standard generated debug keystore so CI builds are installable.
+      // Android's standard generated debug keystore is used for local/CI debug builds.
     }
   }
   compileOptions {
