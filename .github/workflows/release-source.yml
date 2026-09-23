@@ -1,0 +1,40 @@
+name: Publish Production Release
+
+on:
+  push:
+    branches:
+      - cursor/release-simpler-price-cards-f2d7
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        shell: bash
+        run: |
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+          CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -1)
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "APP_CODE=$CODE" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="v${APP_VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "قیمت بازار ${APP_VERSION}" \
+              --notes "نسخه ${APP_VERSION} (versionCode ${APP_CODE})\n\n- ادامه UI مینیمال و تولیدی 1.3.1\n- دیتای واقعی و آنلاین بازار\n- منبع اصلی muchToman با fallback خودکار TGJU\n- اعتبارسنجی پاسخ و جلوگیری از پذیرش نرخ‌های صفر/ناقص\n- بهبود پایداری دریافت طلا، سکه، ارز و رمزارز\n\nAPK/AAB امضاشده فقط با keystore امن تولید می‌شوند و کلید خصوصی داخل ریپوی عمومی ذخیره نمی‌شود."
+          fi
