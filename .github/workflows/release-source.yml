@@ -1,13 +1,6 @@
 name: Publish Production Release
 
 on:
-  push:
-    branches:
-      - cursor/release-simpler-price-cards-f2d7
-    paths:
-      - 'app/build.gradle.kts'
-      - 'app/src/main/**'
-      - '.github/workflows/release-source.yml'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +21,13 @@ jobs:
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "APP_CODE=$CODE" >> "$GITHUB_ENV"
 
-      - name: Publish GitHub Release
+      - name: Guard against empty production releases
+        shell: bash
+        run: |
+          echo "Production releases must be created only after a signed APK/AAB is ready."
+          echo "Version: ${APP_VERSION} (${APP_CODE})"
+
+      - name: Publish source-only release manually
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -37,18 +36,15 @@ jobs:
           BODY=$(cat <<EOF
           نسخه ${APP_VERSION} (versionCode ${APP_CODE})
 
-          - لوگوی جدید رسمی برنامه
-          - ادامه UI مینیمال و حرفه‌ای
-          - دیتای واقعی و آنلاین بازار
-          - منبع اصلی muchToman با fallback خودکار TGJU
-          - اعتبارسنجی نرخ‌ها و رد پاسخ‌های صفر/ناقص
-          - طلا، سکه، ارز و رمزارز
+          - آپدیت داخل برنامه مقاوم‌تر و انتخاب آخرین APK واقعی
+          - نمایش درصد دانلود، حجم فایل و توضیحات نسخه
+          - جلوگیری از انتخاب Release خالی یا فایل آزمایشی
+          - ادامه دیتای واقعی و آنلاین بازار با fallback خودکار
 
-          APK/AAB امضاشده فقط با keystore امن تولید می‌شوند و کلید خصوصی داخل ریپوی عمومی ذخیره نمی‌شود.
+          توجه: این workflow فقط به‌صورت دستی اجرا می‌شود تا Release خالی به‌عنوان آخرین نسخه ساخته نشود.
           EOF
           )
 
-          # Recreate the release/tag so it always targets the exact final production commit.
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release delete "$TAG" --yes --cleanup-tag
           fi
