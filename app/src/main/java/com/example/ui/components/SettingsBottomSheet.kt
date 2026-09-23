@@ -41,6 +41,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.BuildConfig
@@ -94,13 +96,14 @@ fun SettingsBottomSheet(
 
     var updateChecking by remember { mutableStateOf(false) }
     var updateDownloading by remember { mutableStateOf(false) }
+    var updateProgress by remember { mutableIntStateOf(0) }
     var updateStatus by remember { mutableStateOf<String?>(null) }
     var availableRelease by remember { mutableStateOf<GithubReleaseInfo?>(null) }
 
     fun checkUpdate(auto: Boolean = false) {
         scope.launch {
             updateChecking = true
-            updateStatus = if (auto) null else "در حال بررسی GitHub…"
+            updateStatus = if (auto) null else "در حال بررسی نسخه رسمی…"
             availableRelease = null
             when (val result = GithubAppUpdater.checkForUpdate()) {
                 is UpdateCheckResult.Available -> {
@@ -136,7 +139,6 @@ fun SettingsBottomSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp)
         ) {
-            // Soft gradient hero
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,28 +172,68 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Update card
             SettingsSectionCard(
                 icon = Icons.Default.SystemUpdate,
-                title = "به‌روزرسانی از GitHub",
-                subtitle = "بررسی ریلیز رسمی و نصب مستقیم"
+                title = "به‌روزرسانی برنامه",
+                subtitle = "نسخه رسمی GitHub با نصب مستقیم"
             ) {
                 Text(
                     text = updateStatus ?: "آماده بررسی",
-                    color = palette.textSecondary,
-                    fontSize = 13.sp
+                    color = if (availableRelease != null) palette.accent else palette.textSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = if (availableRelease != null) FontWeight.SemiBold else FontWeight.Normal
                 )
+
+                availableRelease?.let { release ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "نسخه ${release.versionName}",
+                            color = palette.textPrimary,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = GithubAppUpdater.formatSize(release.apkSizeBytes),
+                            color = palette.textSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
+                    if (release.releaseNotes.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = release.releaseNotes,
+                            color = palette.textSecondary,
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (updateChecking || updateDownloading) {
                     LinearProgressIndicator(
+                        progress = { if (updateDownloading) updateProgress / 100f else 0.25f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(4.dp)),
                         color = palette.accent,
                         trackColor = palette.border
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    if (updateDownloading) {
+                        Text(
+                            text = "دانلود $updateProgress٪",
+                            color = palette.textSecondary,
+                            fontSize = 11.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 Row(
@@ -221,20 +263,30 @@ fun SettingsBottomSheet(
                         onClick = {
                             val release = availableRelease ?: return@Button
                             updateDownloading = true
-                            updateStatus = "در حال دانلود ${release.versionName}…"
+                            updateProgress = 0
+                            updateStatus = "در حال دانلود نسخه ${release.versionName}…"
                             GithubAppUpdater.downloadAndInstall(
                                 context = context,
                                 release = release,
                                 onStarted = {
-                                    updateStatus = "دانلود شروع شد…"
+                                    updateStatus = "دانلود نسخه رسمی شروع شد"
+                                },
+                                onProgress = { progress ->
+                                    updateProgress = progress
+                                },
+                                onReadyToInstall = {
+                                    updateDownloading = false
+                                    updateProgress = 100
+                                    updateStatus = "دانلود کامل شد؛ نصب را تأیید کنید"
                                 },
                                 onError = { err ->
                                     updateDownloading = false
+                                    updateProgress = 0
                                     if (err == "ALLOW_UNKNOWN_SOURCES") {
-                                        updateStatus = "اجازه نصب از منابع ناشناس لازم است"
+                                        updateStatus = "اجازه نصب از این برنامه لازم است"
                                         Toast.makeText(
                                             context,
-                                            "اجازه نصب را فعال کنید",
+                                            "اجازه نصب برنامه را فعال کنید",
                                             Toast.LENGTH_LONG
                                         ).show()
                                         GithubAppUpdater.openUnknownSourcesSettings(context)
@@ -244,9 +296,6 @@ fun SettingsBottomSheet(
                                     }
                                 }
                             )
-                            // Install prompt opens when download completes; clear downloading after a beat via status
-                            updateDownloading = false
-                            updateStatus = "پس از اتمام دانلود، نصب را تأیید کنید"
                         },
                         enabled = availableRelease != null && !updateChecking && !updateDownloading,
                         modifier = Modifier
@@ -266,7 +315,7 @@ fun SettingsBottomSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("دانلود و نصب")
+                        Text(if (updateDownloading) "$updateProgress٪" else "دانلود و نصب")
                     }
                 }
 
@@ -274,7 +323,7 @@ fun SettingsBottomSheet(
                     onClick = { GithubAppUpdater.openReleasePage(context) },
                     modifier = Modifier.testTag("open_github_release_button")
                 ) {
-                    Text("مشاهده صفحه ریلیز GitHub", color = palette.accent, fontSize = 12.sp)
+                    Text("مشاهده Releaseها در GitHub", color = palette.accent, fontSize = 12.sp)
                 }
             }
 
