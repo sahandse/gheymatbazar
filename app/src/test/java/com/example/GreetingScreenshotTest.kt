@@ -38,7 +38,9 @@ class GreetingScreenshotTest {
             updatedAt = System.currentTimeMillis()
           ),
           flashType = PriceFlashType.NONE,
-          onClick = {}
+          isFavorite = true,
+          onClick = {},
+          onToggleFavorite = {}
         )
       }
     }
@@ -46,4 +48,3 @@ class GreetingScreenshotTest {
     composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/greeting.png")
   }
 }
-

@@ -1,6 +1,6 @@
 {
   "name": "قیمت بازار",
-  "description": "نمایش زنده و لحظه‌ای نرخ دلار، طلای ۱۸ عیار و سکه امامی با طراحی مینیمال و دارک مود",
+  "description": "نمایش مینیمال و لحظه‌ای نرخ دلار، طلا و سکه با علاقه‌مندی، جستجو، محاسبه‌گر اختیاری، ویجت قابل تنظیم و اعلان تغییر قیمت",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

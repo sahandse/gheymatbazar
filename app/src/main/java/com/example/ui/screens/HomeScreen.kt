@@ -1,12 +1,7 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,53 +16,46 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.MarketRateEntity
 import com.example.data.model.MarketCategory
 import com.example.ui.MarketRatesUiState
 import com.example.ui.PriceFlashType
-import com.example.ui.components.HorizontalRatesCarousel
-import com.example.ui.components.MarketConverterCard
+import com.example.ui.components.ConverterBottomSheet
 import com.example.ui.components.MarketRateCard
 import com.example.ui.components.MarketRatesHeader
 import com.example.ui.components.MarketTabs
-import com.example.ui.components.MarketTrendChartCard
-import com.example.ui.components.ShareOptionsBottomSheet
-import com.example.ui.theme.CardBackground
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.CardSecondary
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.RateDecrease
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.components.SettingsBottomSheet
+import com.example.ui.theme.LocalAppPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,13 +64,20 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onCategorySelected: (MarketCategory) -> Unit,
     onRateClick: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+    onToggleConverter: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onCloseSettings: () -> Unit,
+    onCloseConverter: () -> Unit,
+    onDarkThemeChange: (Boolean) -> Unit,
+    onCompactListChange: (Boolean) -> Unit,
+    onAlertsEnabledChange: (Boolean) -> Unit,
+    onWidgetSlotsChange: (String, String, String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalAppPalette.current
     val pullToRefreshState = rememberPullToRefreshState()
-    var isConverterVisible by remember { mutableStateOf(true) }
-    var rateToShare by remember { mutableStateOf<MarketRateEntity?>(null) }
-    var selectedChartRateId by remember { mutableStateOf<String?>(null) }
-    var isChartVisible by remember { mutableStateOf(true) }
 
     PullToRefreshBox(
         isRefreshing = uiState.isLoading && uiState.rates.isNotEmpty(),
@@ -90,7 +85,7 @@ fun HomeScreen(
         state = pullToRefreshState,
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(palette.background)
             .statusBarsPadding()
             .navigationBarsPadding(),
         indicator = {
@@ -101,159 +96,129 @@ fun HomeScreen(
                     .align(Alignment.TopCenter)
                     .padding(top = 12.dp)
                     .testTag("pull_to_refresh_indicator"),
-                containerColor = CardSecondary,
-                color = GoldAccent
+                containerColor = palette.cardSecondary,
+                color = palette.accent
             )
         }
     ) {
-        // Ambient luxury glow in top corner
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(GoldAccent.copy(alpha = 0.05f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.12f),
-                        radius = size.width * 0.65f
-                    ),
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.12f),
-                    radius = size.width * 0.65f
-                )
-            }
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(palette.accent.copy(alpha = 0.14f), Color.Transparent),
+                    center = Offset(size.width * 0.78f, -size.height * 0.02f),
+                    radius = size.width * 1.05f
+                ),
+                center = Offset(size.width * 0.78f, -size.height * 0.02f),
+                radius = size.width * 1.05f
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(palette.increase.copy(alpha = 0.05f), Color.Transparent),
+                    center = Offset(size.width * -0.05f, size.height * 0.62f),
+                    radius = size.width * 0.9f
+                ),
+                center = Offset(size.width * -0.05f, size.height * 0.62f),
+                radius = size.width * 0.9f
+            )
         }
 
         when {
-            // Empty cache + Error state
             uiState.rates.isEmpty() && uiState.errorMessage != null -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 20.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     MarketRatesHeader(
                         lastUpdated = uiState.lastUpdated,
                         isLoading = uiState.isLoading,
                         isOffline = uiState.isOffline,
-                        onRefresh = onRefresh
+                        onRefresh = onRefresh,
+                        onToggleConverter = onToggleConverter,
+                        isConverterVisible = uiState.showConverter,
+                        onOpenSettings = onOpenSettings
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 60.dp),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(22.dp))
-                                .background(CardBackground)
-                                .border(1.dp, CardBorder, RoundedCornerShape(22.dp))
-                                .padding(28.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(DarkBackground),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.WarningAmber,
-                                    contentDescription = null,
-                                    tint = RateDecrease,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = uiState.errorMessage,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary,
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Text(
-                                text = "لطفاً اتصال اینترنت خود را بررسی نمایید.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary,
+                                color = palette.textPrimary,
                                 textAlign = TextAlign.Center
                             )
-
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "اتصال اینترنت را بررسی کنید.",
+                                color = palette.textSecondary,
+                                textAlign = TextAlign.Center
+                            )
                             Spacer(modifier = Modifier.height(20.dp))
-
                             Button(
                                 onClick = onRefresh,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = GoldAccent,
-                                    contentColor = DarkBackground
+                                    containerColor = palette.accent,
+                                    contentColor = palette.background
                                 ),
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.testTag("retry_button")
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                Icon(Icons.Default.Refresh, null, Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.size(8.dp))
-                                Text(
-                                    text = "تلاش مجدد",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text("تلاش مجدد", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
             }
 
-            // Initial loading state before cache or network
             uiState.rates.isEmpty() && uiState.isLoading -> {
-                Box(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(
-                            color = GoldAccent,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(40.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "در حال بارگذاری نرخ‌ها...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
-                        )
-                    }
+                    CircularProgressIndicator(
+                        color = palette.accent,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("بارگذاری نرخ‌ها...", color = palette.textSecondary)
                 }
             }
 
-            // Active list with 3 Tabs & filtered items
             else -> {
-                val displayedRates = uiState.rates
+                val query = uiState.searchQuery.trim()
+                val categoryRates = uiState.rates
                     .filter { it.category == uiState.selectedCategory.code }
                     .sortedBy { it.orderIndex }
-                    .ifEmpty {
-                        // If selected category has no items yet, fallback to all rates
-                        uiState.rates.sortedBy { it.orderIndex }
+                    .ifEmpty { uiState.rates.sortedBy { it.orderIndex } }
+
+                val filtered = if (query.isEmpty()) {
+                    categoryRates
+                } else {
+                    categoryRates.filter {
+                        it.name.contains(query, ignoreCase = true) ||
+                            it.symbol.contains(query, ignoreCase = true) ||
+                            it.id.contains(query, ignoreCase = true)
                     }
+                }
+
+                val favorites = filtered
+                    .filter { it.id in uiState.favoriteIds }
+                    .sortedBy { uiState.favoriteIds.toList().indexOf(it.id).takeIf { i -> i >= 0 } ?: 99 }
+                val others = filtered.filter { it.id !in uiState.favoriteIds }
 
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 22.dp),
+                    contentPadding = PaddingValues(top = 14.dp, bottom = 36.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (uiState.compactList) 6.dp else 8.dp)
                 ) {
                     item(key = "header") {
                         MarketRatesHeader(
@@ -261,88 +226,153 @@ fun HomeScreen(
                             isLoading = uiState.isLoading,
                             isOffline = uiState.isOffline,
                             onRefresh = onRefresh,
-                            onToggleConverter = { isConverterVisible = !isConverterVisible },
-                            isConverterVisible = isConverterVisible
+                            onToggleConverter = onToggleConverter,
+                            isConverterVisible = uiState.showConverter,
+                            onOpenSettings = onOpenSettings
+                        )
+                    }
+
+                    item(key = "search") {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("search_field"),
+                            placeholder = {
+                                Text("جستجو…", color = palette.textSecondary.copy(alpha = 0.7f))
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    null,
+                                    tint = palette.textSecondary.copy(alpha = 0.7f)
+                                )
+                            },
+                            trailingIcon = {
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { onSearchQueryChange("") }) {
+                                        Icon(Icons.Default.Close, "پاک کردن", tint = palette.textSecondary)
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(18.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = palette.accent.copy(alpha = 0.45f),
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = palette.textPrimary,
+                                unfocusedTextColor = palette.textPrimary,
+                                cursorColor = palette.accent,
+                                focusedContainerColor = palette.card.copy(alpha = 0.9f),
+                                unfocusedContainerColor = palette.card.copy(alpha = 0.72f)
+                            )
                         )
                     }
 
                     item(key = "tabs") {
                         MarketTabs(
                             selectedCategory = uiState.selectedCategory,
-                            onCategorySelected = { cat ->
-                                selectedChartRateId = null
-                                isChartVisible = true
-                                onCategorySelected(cat)
+                            onCategorySelected = onCategorySelected
+                        )
+                    }
+
+                    if (query.isNotEmpty()) {
+                        items(filtered, key = { it.id }) { rate ->
+                            MarketRateCard(
+                                rate = rate,
+                                flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
+                                isFavorite = rate.id in uiState.favoriteIds,
+                                onClick = { onRateClick(rate.id) },
+                                onToggleFavorite = { onToggleFavorite(rate.id) },
+                                compact = uiState.compactList
+                            )
+                        }
+                    } else {
+                        if (favorites.isNotEmpty()) {
+                            item(key = "fav_header") {
+                                Text(
+                                    text = "علاقه‌مندی‌ها",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.textSecondary,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
                             }
-                        )
-                    }
+                            items(favorites, key = { "fav_${it.id}" }) { rate ->
+                                MarketRateCard(
+                                    rate = rate,
+                                    flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
+                                    isFavorite = true,
+                                    onClick = { onRateClick(rate.id) },
+                                    onToggleFavorite = { onToggleFavorite(rate.id) },
+                                    compact = uiState.compactList
+                                )
+                            }
+                            if (others.isNotEmpty()) {
+                                item(key = "all_header") {
+                                    Text(
+                                        text = "همه نرخ‌ها",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = palette.textSecondary,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
+                                }
+                            }
+                        }
 
-                    // Horizontal Rates Carousel for the selected category (Gold, Currencies, Cryptos)
-                    val (carouselTitle, carouselIcon) = when (uiState.selectedCategory) {
-                        MarketCategory.GOLD -> "طلا و انواع سکه (بهار آزادی، امامی، گرمی، پارسیان)" to "🪙"
-                        MarketCategory.CURRENCY -> "دلار و تمامی ارزهای جهان (پوند، یورو، درهم، لیر...)" to "💵"
-                        MarketCategory.CRYPTO -> "رمزارزها و ارزهای دیجیتال برتر (بیت‌کوین، اتریوم...)" to "⚡"
-                    }
-
-                    item(key = "horizontal_rates_${uiState.selectedCategory.code}") {
-                        HorizontalRatesCarousel(
-                            title = carouselTitle,
-                            categoryIcon = carouselIcon,
-                            rates = displayedRates,
-                            selectedRateId = selectedChartRateId,
-                            onRateSelected = { rateId ->
-                                selectedChartRateId = rateId
-                                isChartVisible = true
-                            },
-                            onNavigateDetail = onRateClick,
-                            onShareRate = { r -> rateToShare = r }
-                        )
-                    }
-
-                    // Interactive trend chart (opens on clicking any horizontal rate card or tab)
-                    if (isChartVisible) {
-                        item(key = "chart_${uiState.selectedCategory.code}") {
-                            MarketTrendChartCard(
-                                category = uiState.selectedCategory,
-                                rates = uiState.rates,
-                                onRateClick = onRateClick,
-                                activeRateId = selectedChartRateId,
-                                onClose = { isChartVisible = false }
+                        items(others, key = { it.id }) { rate ->
+                            MarketRateCard(
+                                rate = rate,
+                                flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
+                                isFavorite = rate.id in uiState.favoriteIds,
+                                onClick = { onRateClick(rate.id) },
+                                onToggleFavorite = { onToggleFavorite(rate.id) },
+                                compact = uiState.compactList
                             )
                         }
                     }
 
-                    if (isConverterVisible) {
-                        item(key = "market_converter_card") {
-                            MarketConverterCard(
-                                rates = uiState.rates
+                    if (filtered.isEmpty()) {
+                        item(key = "empty_search") {
+                            Text(
+                                text = "نتیجه‌ای پیدا نشد",
+                                color = palette.textSecondary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                textAlign = TextAlign.Center
                             )
                         }
-                    }
-
-                    items(
-                        items = displayedRates,
-                        key = { it.id }
-                    ) { rate ->
-                        val flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE
-                        MarketRateCard(
-                            rate = rate,
-                            flashType = flashType,
-                            onClick = { 
-                                selectedChartRateId = rate.id
-                                isChartVisible = true
-                            },
-                            onShareClick = { r -> rateToShare = r }
-                        )
                     }
                 }
             }
         }
 
-        rateToShare?.let { rate ->
-            ShareOptionsBottomSheet(
-                rate = rate,
-                onDismiss = { rateToShare = null }
+        if (uiState.showConverter) {
+            ConverterBottomSheet(
+                rates = uiState.rates,
+                onDismiss = onCloseConverter
+            )
+        }
+
+        if (uiState.showSettings) {
+            SettingsBottomSheet(
+                rates = uiState.rates,
+                isDarkTheme = uiState.isDarkTheme,
+                compactList = uiState.compactList,
+                alertsEnabled = uiState.alertsEnabled,
+                widgetSlot1 = uiState.widgetSlot1,
+                widgetSlot2 = uiState.widgetSlot2,
+                widgetSlot3 = uiState.widgetSlot3,
+                widgetSlot4 = uiState.widgetSlot4,
+                onDarkThemeChange = onDarkThemeChange,
+                onCompactListChange = onCompactListChange,
+                onAlertsEnabledChange = onAlertsEnabledChange,
+                onWidgetSlotsChange = onWidgetSlotsChange,
+                onDismiss = onCloseSettings
             )
         }
     }

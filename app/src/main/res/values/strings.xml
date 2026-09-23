@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">قیمت بازار</string>
-    <string name="widget_description">نمایش لحظه‌ای قیمت دلار، طلای ۱۸ عیار، سکه و تتر در صفحه اصلی</string>
+    <string name="widget_description">نمایش نرخ‌های منتخب شما (دلار، طلا، سکه و …) روی صفحه اصلی</string>
+    <string name="store_short_description">قیمت لحظه‌ای دلار، طلا و ارز دیجیتال با ویجت و اعلان</string>
+    <string name="store_full_description">قیمت بازار یک اپلیکیشن مینیمال برای دنبال کردن نرخ‌های زنده است.\n\nویژگی‌ها:\n• لیست ساده طلا، ارز و کریپتو\n• علاقه‌مندی و جستجو\n• محاسبه‌گر تبدیل (اختیاری)\n• اعلان تغییر قیمت\n• ویجت صفحه اصلی با دارایی‌های قابل انتخاب\n• حالت روشن و تاریک\n• به‌روزرسانی داخلی از GitHub</string>
 </resources>

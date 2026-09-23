@@ -111,7 +111,7 @@ object MarketShareHelper {
                 textSize = 28f
                 isAntiAlias = true
             }
-            canvas.drawText("${rate.symbol} • ${rate.provider}", 80f, 235f, subPaint)
+            canvas.drawText(rate.symbol, 80f, 235f, subPaint)
 
             // Big Live Price
             val pricePaint = Paint().apply {

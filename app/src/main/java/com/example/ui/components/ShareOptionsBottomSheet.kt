@@ -133,27 +133,11 @@ fun ShareOptionsBottomSheet(
             HorizontalDivider(color = Color(0xFF1E2532), thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Option 1: Share as Image with Chart
-            ShareOptionCard(
-                icon = Icons.Default.Image,
-                iconTint = GoldAccent,
-                title = "اشتراک‌گذاری تصویر کارت نرخ و نمودار",
-                description = "کارت گرافیکی شیک با جزئیات قیمت و نمودار نوسان (مناسب استوری و تلگرام)",
-                onClick = {
-                    onDismiss()
-                    MarketShareHelper.shareRateCardWithChartImage(context, rate)
-                },
-                testTag = "share_as_image_option"
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Option 2: Share as Text
             ShareOptionCard(
                 icon = Icons.Default.TextFields,
                 iconTint = Color(0xFF64B5F6),
-                title = "اشتراک‌گذاری متنی نرخ لحظه‌ای",
-                description = "متن خلاصه نرخ، نوسان ۲۴س و سقف و کف روزانه برای ارسال سریع در چت‌ها",
+                title = "اشتراک‌گذاری نرخ لحظه‌ای",
+                description = "متن خلاصه قیمت واقعی و نوسان برای ارسال در چت‌ها",
                 onClick = {
                     onDismiss()
                     MarketShareHelper.shareRateText(context, rate)
