@@ -40,6 +40,7 @@ data class MarketRatesUiState(
     val alertRateIds: Set<String> = AppUserPrefs.DEFAULT_FAVORITES,
     val alertsEnabled: Boolean = true,
     val isDarkTheme: Boolean = true,
+    val compactList: Boolean = false,
     val widgetSlot1: String = "USD",
     val widgetSlot2: String = "GOLD_18K",
     val widgetSlot3: String = "COIN_EMAMI",
@@ -76,6 +77,7 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
                         alertRateIds = prefs.alertRateIds,
                         alertsEnabled = prefs.alertsEnabled,
                         isDarkTheme = prefs.isDarkTheme,
+                        compactList = prefs.compactList,
                         widgetSlot1 = prefs.widgetSlot1,
                         widgetSlot2 = prefs.widgetSlot2,
                         widgetSlot3 = prefs.widgetSlot3,
@@ -211,6 +213,10 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setDarkTheme(enabled: Boolean) {
         viewModelScope.launch { preferences.setDarkTheme(enabled) }
+    }
+
+    fun setCompactList(enabled: Boolean) {
+        viewModelScope.launch { preferences.setCompactList(enabled) }
     }
 
     fun setWidgetSlots(slot1: String, slot2: String, slot3: String, slot4: String) {

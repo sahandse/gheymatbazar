@@ -41,13 +41,13 @@ val DarkPalette = AppPalette(
 )
 
 val LightPalette = AppPalette(
-    background = Color(0xFFF7F6F3),
+    background = Color(0xFFF5F4F0),
     card = Color(0xFFFFFFFF),
-    cardSecondary = Color(0xFFF0EEEA),
-    border = Color(0xFFE2DED6),
-    textPrimary = Color(0xFF1A1C1E),
-    textSecondary = Color(0xFF6B7078),
-    accent = Color(0xFFB8860B),
+    cardSecondary = Color(0xFFEEECE6),
+    border = Color(0xFFDDD8CE),
+    textPrimary = Color(0xFF16181B),
+    textSecondary = Color(0xFF6A7078),
+    accent = Color(0xFFC4962A),
     increase = Color(0xFF1B9E5A),
     decrease = Color(0xFFD64545),
     increaseBg = Color(0x1F1B9E5A),

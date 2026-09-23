@@ -152,6 +152,7 @@ private fun HomeContent(viewModel: MarketRatesViewModel) {
         onCloseSettings = { viewModel.setShowSettings(false) },
         onCloseConverter = { viewModel.setShowConverter(false) },
         onDarkThemeChange = { viewModel.setDarkTheme(it) },
+        onCompactListChange = { viewModel.setCompactList(it) },
         onAlertsEnabledChange = { viewModel.setAlertsEnabled(it) },
         onWidgetSlotsChange = { a, b, c, d -> viewModel.setWidgetSlots(a, b, c, d) }
     )

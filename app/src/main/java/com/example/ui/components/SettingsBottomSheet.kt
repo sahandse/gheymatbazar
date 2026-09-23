@@ -69,12 +69,14 @@ import kotlinx.coroutines.launch
 fun SettingsBottomSheet(
     rates: List<MarketRateEntity>,
     isDarkTheme: Boolean,
+    compactList: Boolean,
     alertsEnabled: Boolean,
     widgetSlot1: String,
     widgetSlot2: String,
     widgetSlot3: String,
     widgetSlot4: String,
     onDarkThemeChange: (Boolean) -> Unit,
+    onCompactListChange: (Boolean) -> Unit,
     onAlertsEnabledChange: (Boolean) -> Unit,
     onWidgetSlotsChange: (String, String, String, String) -> Unit,
     onDismiss: () -> Unit
@@ -281,12 +283,18 @@ fun SettingsBottomSheet(
             SettingsSectionCard(
                 icon = Icons.Default.DarkMode,
                 title = "ظاهر",
-                subtitle = "تم برنامه"
+                subtitle = "تم و تراکم نمایش"
             ) {
                 SettingsToggleRow(
                     title = "حالت تاریک",
                     checked = isDarkTheme,
                     onCheckedChange = onDarkThemeChange
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsToggleRow(
+                    title = "لیست فشرده",
+                    checked = compactList,
+                    onCheckedChange = onCompactListChange
                 )
             }
 

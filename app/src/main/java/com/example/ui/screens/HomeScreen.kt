@@ -72,6 +72,7 @@ fun HomeScreen(
     onCloseSettings: () -> Unit,
     onCloseConverter: () -> Unit,
     onDarkThemeChange: (Boolean) -> Unit,
+    onCompactListChange: (Boolean) -> Unit,
     onAlertsEnabledChange: (Boolean) -> Unit,
     onWidgetSlotsChange: (String, String, String, String) -> Unit,
     modifier: Modifier = Modifier
@@ -219,7 +220,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
                     contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(if (uiState.compactList) 6.dp else 10.dp)
                 ) {
                     item(key = "header") {
                         MarketRatesHeader(
@@ -283,7 +284,8 @@ fun HomeScreen(
                                 flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
                                 isFavorite = rate.id in uiState.favoriteIds,
                                 onClick = { onRateClick(rate.id) },
-                                onToggleFavorite = { onToggleFavorite(rate.id) }
+                                onToggleFavorite = { onToggleFavorite(rate.id) },
+                                compact = uiState.compactList
                             )
                         }
                     } else {
@@ -303,7 +305,8 @@ fun HomeScreen(
                                     flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
                                     isFavorite = true,
                                     onClick = { onRateClick(rate.id) },
-                                    onToggleFavorite = { onToggleFavorite(rate.id) }
+                                    onToggleFavorite = { onToggleFavorite(rate.id) },
+                                    compact = uiState.compactList
                                 )
                             }
                             if (others.isNotEmpty()) {
@@ -325,7 +328,8 @@ fun HomeScreen(
                                 flashType = uiState.priceFlashMap[rate.id] ?: PriceFlashType.NONE,
                                 isFavorite = rate.id in uiState.favoriteIds,
                                 onClick = { onRateClick(rate.id) },
-                                onToggleFavorite = { onToggleFavorite(rate.id) }
+                                onToggleFavorite = { onToggleFavorite(rate.id) },
+                                compact = uiState.compactList
                             )
                         }
                     }
@@ -357,12 +361,14 @@ fun HomeScreen(
             SettingsBottomSheet(
                 rates = uiState.rates,
                 isDarkTheme = uiState.isDarkTheme,
+                compactList = uiState.compactList,
                 alertsEnabled = uiState.alertsEnabled,
                 widgetSlot1 = uiState.widgetSlot1,
                 widgetSlot2 = uiState.widgetSlot2,
                 widgetSlot3 = uiState.widgetSlot3,
                 widgetSlot4 = uiState.widgetSlot4,
                 onDarkThemeChange = onDarkThemeChange,
+                onCompactListChange = onCompactListChange,
                 onAlertsEnabledChange = onAlertsEnabledChange,
                 onWidgetSlotsChange = onWidgetSlotsChange,
                 onDismiss = onCloseSettings

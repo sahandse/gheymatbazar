@@ -19,6 +19,7 @@ data class AppUserPrefs(
     val alertRateIds: Set<String> = DEFAULT_FAVORITES,
     val alertsEnabled: Boolean = true,
     val isDarkTheme: Boolean = true,
+    val compactList: Boolean = false,
     val widgetSlot1: String = "USD",
     val widgetSlot2: String = "GOLD_18K",
     val widgetSlot3: String = "COIN_EMAMI",
@@ -37,6 +38,7 @@ class AppPreferences(private val context: Context) {
             alertRateIds = prefs[Keys.ALERT_RATES] ?: AppUserPrefs.DEFAULT_FAVORITES,
             alertsEnabled = prefs[Keys.ALERTS_ENABLED] ?: true,
             isDarkTheme = prefs[Keys.DARK_THEME] ?: true,
+            compactList = prefs[Keys.COMPACT_LIST] ?: false,
             widgetSlot1 = prefs[Keys.WIDGET_1] ?: "USD",
             widgetSlot2 = prefs[Keys.WIDGET_2] ?: "GOLD_18K",
             widgetSlot3 = prefs[Keys.WIDGET_3] ?: "COIN_EMAMI",
@@ -81,6 +83,10 @@ class AppPreferences(private val context: Context) {
         context.dataStore.edit { it[Keys.DARK_THEME] = enabled }
     }
 
+    suspend fun setCompactList(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.COMPACT_LIST] = enabled }
+    }
+
     suspend fun setWidgetSlots(slot1: String, slot2: String, slot3: String, slot4: String) {
         context.dataStore.edit {
             it[Keys.WIDGET_1] = slot1
@@ -95,6 +101,7 @@ class AppPreferences(private val context: Context) {
         val ALERT_RATES = stringSetPreferencesKey("alert_rates")
         val ALERTS_ENABLED = booleanPreferencesKey("alerts_enabled")
         val DARK_THEME = booleanPreferencesKey("dark_theme")
+        val COMPACT_LIST = booleanPreferencesKey("compact_list")
         val WIDGET_1 = stringPreferencesKey("widget_slot_1")
         val WIDGET_2 = stringPreferencesKey("widget_slot_2")
         val WIDGET_3 = stringPreferencesKey("widget_slot_3")
