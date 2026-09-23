@@ -23,10 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,30 +42,20 @@ fun SplashScreen(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalAppPalette.current
-    val logoScale = remember { Animatable(0.72f) }
+    val logoScale = remember { Animatable(0.82f) }
     val logoAlpha = remember { Animatable(0f) }
     val titleAlpha = remember { Animatable(0f) }
-    val titleOffset = remember { Animatable(18f) }
-    val ringAlpha = remember { Animatable(0f) }
+    val titleOffset = remember { Animatable(14f) }
+    val glowAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        launch {
-            logoAlpha.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
-        }
-        launch {
-            logoScale.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
-        }
-        launch {
-            ringAlpha.animateTo(1f, tween(800, easing = FastOutSlowInEasing))
-        }
-        delay(280)
-        launch {
-            titleAlpha.animateTo(1f, tween(450, easing = FastOutSlowInEasing))
-        }
-        launch {
-            titleOffset.animateTo(0f, tween(450, easing = FastOutSlowInEasing))
-        }
-        delay(900)
+        launch { logoAlpha.animateTo(1f, tween(520, easing = FastOutSlowInEasing)) }
+        launch { logoScale.animateTo(1f, tween(720, easing = FastOutSlowInEasing)) }
+        launch { glowAlpha.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) }
+        delay(260)
+        launch { titleAlpha.animateTo(1f, tween(420, easing = FastOutSlowInEasing)) }
+        launch { titleOffset.animateTo(0f, tween(420, easing = FastOutSlowInEasing)) }
+        delay(880)
         onTimeout()
     }
 
@@ -78,12 +68,21 @@ fun SplashScreen(
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(palette.accent.copy(alpha = 0.12f), Color.Transparent),
-                    center = Offset(size.width / 2f, size.height * 0.42f),
-                    radius = size.minDimension * 0.55f
+                    colors = listOf(palette.accent.copy(alpha = 0.16f * glowAlpha.value), Color.Transparent),
+                    center = Offset(size.width / 2f, size.height * 0.38f),
+                    radius = size.minDimension * 0.72f
                 ),
-                center = Offset(size.width / 2f, size.height * 0.42f),
-                radius = size.minDimension * 0.55f
+                center = Offset(size.width / 2f, size.height * 0.38f),
+                radius = size.minDimension * 0.72f
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(palette.increase.copy(alpha = 0.05f * glowAlpha.value), Color.Transparent),
+                    center = Offset(size.width * 0.2f, size.height * 0.7f),
+                    radius = size.minDimension * 0.5f
+                ),
+                center = Offset(size.width * 0.2f, size.height * 0.7f),
+                radius = size.minDimension * 0.5f
             )
         }
 
@@ -91,12 +90,12 @@ fun SplashScreen(
             Box(contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier
-                        .size(150.dp)
+                        .size(168.dp)
                         .scale(logoScale.value)
-                        .alpha(ringAlpha.value * 0.55f)
+                        .alpha(glowAlpha.value * 0.5f)
                         .background(
                             Brush.radialGradient(
-                                listOf(palette.accent.copy(alpha = 0.28f), Color.Transparent)
+                                listOf(palette.accent.copy(alpha = 0.22f), Color.Transparent)
                             ),
                             CircleShape
                         )
@@ -105,33 +104,33 @@ fun SplashScreen(
                     painter = painterResource(id = R.drawable.ic_market_rates),
                     contentDescription = "قیمت بازار",
                     modifier = Modifier
-                        .size(92.dp)
+                        .size(88.dp)
                         .scale(logoScale.value)
                         .alpha(logoAlpha.value)
                         .clip(CircleShape)
                 )
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Text(
                 text = "قیمت بازار",
                 style = MaterialTheme.typography.headlineMedium,
                 color = palette.textPrimary,
                 fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                modifier = Modifier
-                    .graphicsLayer {
-                        alpha = titleAlpha.value
-                        translationY = titleOffset.value
-                    }
+                fontSize = 28.sp,
+                letterSpacing = (-0.4).sp,
+                modifier = Modifier.graphicsLayer {
+                    alpha = titleAlpha.value
+                    translationY = titleOffset.value
+                }
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "نرخ زنده طلا، ارز و کریپتو",
+                text = "نرخ زنده",
                 color = palette.textSecondary,
                 fontSize = 13.sp,
-                modifier = Modifier.alpha(titleAlpha.value * 0.9f)
+                modifier = Modifier.alpha(titleAlpha.value * 0.85f)
             )
         }
     }

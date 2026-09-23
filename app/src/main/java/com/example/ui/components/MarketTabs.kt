@@ -3,7 +3,6 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,29 +39,28 @@ fun MarketTabs(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(palette.card)
-            .border(1.dp, palette.border.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
-            .padding(4.dp)
+            .clip(RoundedCornerShape(100.dp))
+            .background(palette.card.copy(alpha = 0.72f))
+            .padding(3.dp)
             .testTag("market_category_tabs"),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         MarketTabItem(
-            title = "🪙 طلا",
+            title = "طلا",
             isSelected = selectedCategory == MarketCategory.GOLD,
             onClick = { onCategorySelected(MarketCategory.GOLD) },
             modifier = Modifier.weight(1f),
             testTag = "tab_gold"
         )
         MarketTabItem(
-            title = "💵 ارز",
+            title = "ارز",
             isSelected = selectedCategory == MarketCategory.CURRENCY,
             onClick = { onCategorySelected(MarketCategory.CURRENCY) },
             modifier = Modifier.weight(1f),
             testTag = "tab_currency"
         )
         MarketTabItem(
-            title = "⚡ کریپتو",
+            title = "کریپتو",
             isSelected = selectedCategory == MarketCategory.CRYPTO,
             onClick = { onCategorySelected(MarketCategory.CRYPTO) },
             modifier = Modifier.weight(1f),
@@ -83,31 +80,23 @@ private fun MarketTabItem(
     val palette = LocalAppPalette.current
     val bg by animateColorAsState(
         targetValue = if (isSelected) palette.accent else palette.card.copy(alpha = 0f),
-        animationSpec = tween(220),
+        animationSpec = tween(200),
         label = "tabBg"
     )
     val textColor by animateColorAsState(
         targetValue = if (isSelected) palette.background else palette.textSecondary,
-        animationSpec = tween(220),
+        animationSpec = tween(200),
         label = "tabText"
     )
 
     Box(
         modifier = modifier
-            .height(42.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isSelected) {
-                    Brush.verticalGradient(
-                        listOf(palette.accent, palette.accent.copy(alpha = 0.85f))
-                    )
-                } else {
-                    Brush.verticalGradient(listOf(bg, bg))
-                }
-            )
+            .height(38.dp)
+            .clip(RoundedCornerShape(100.dp))
+            .background(bg)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = palette.accent.copy(alpha = 0.2f)),
+                indication = ripple(color = palette.accent.copy(alpha = 0.18f)),
                 onClick = onClick
             )
             .testTag(testTag),
@@ -119,8 +108,7 @@ private fun MarketTabItem(
             color = textColor,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 13.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 4.dp)
+            textAlign = TextAlign.Center
         )
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,7 +59,6 @@ fun DetailScreen(
     rate: MarketRateEntity,
     isFavorite: Boolean,
     isAlertEnabled: Boolean,
-    providerLabel: String,
     onBackClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onToggleAlert: () -> Unit,
@@ -89,11 +87,20 @@ fun DetailScreen(
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(palette.accent.copy(alpha = 0.10f), Color.Transparent),
-                    center = Offset(size.width * 0.2f, size.height * 0.12f),
+                    colors = listOf(trendColor.copy(alpha = 0.12f), Color.Transparent),
+                    center = Offset(size.width * 0.5f, size.height * 0.08f),
+                    radius = size.width * 0.95f
+                ),
+                center = Offset(size.width * 0.5f, size.height * 0.08f),
+                radius = size.width * 0.95f
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(palette.accent.copy(alpha = 0.06f), Color.Transparent),
+                    center = Offset(size.width * 0.9f, size.height * 0.55f),
                     radius = size.width * 0.7f
                 ),
-                center = Offset(size.width * 0.2f, size.height * 0.12f),
+                center = Offset(size.width * 0.9f, size.height * 0.55f),
                 radius = size.width * 0.7f
             )
         }
@@ -103,43 +110,26 @@ fun DetailScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 22.dp)
                 .verticalScroll(scrollState)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.testTag("detail_back_button")
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "بازگشت",
-                            tint = palette.textPrimary
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = rate.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = palette.textPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = rate.symbol,
-                            color = palette.textSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.testTag("detail_back_button")
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "بازگشت",
+                        tint = palette.textPrimary
+                    )
                 }
-
                 Row {
                     IconButton(onClick = onToggleFavorite, modifier = Modifier.testTag("detail_favorite")) {
                         Icon(
@@ -164,147 +154,151 @@ fun DetailScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(palette.card, palette.cardSecondary)
-                        )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(palette.card.copy(alpha = 0.9f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = MarketAssetHelper.getAssetIcon(rate.id),
+                        fontSize = 26.sp
                     )
-                    .border(1.dp, palette.border, RoundedCornerShape(24.dp))
-                    .padding(22.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(CircleShape)
-                            .background(palette.accent.copy(alpha = 0.14f))
-                            .border(1.dp, palette.accent.copy(alpha = 0.3f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = MarketAssetHelper.getAssetIcon(rate.id),
-                            fontSize = 24.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column {
-                        Text(
-                            text = "قیمت لحظه‌ای",
-                            color = palette.textSecondary,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        if (rate.changePercent != null) {
-                            Text(
-                                text = PersianFormatters.formatPercentage(rate.changePercent),
-                                color = trendColor,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
                 }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column {
+                    Text(
+                        text = rate.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = palette.textPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                    Text(
+                        text = rate.symbol,
+                        color = palette.textSecondary,
+                        fontSize = 13.sp
+                    )
+                }
+            }
 
-                Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
-                Text(
-                    text = PersianFormatters.formatPrice(rate.price),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = palette.textPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 34.sp
-                )
-                Text(
-                    text = rate.unit,
-                    color = palette.textSecondary,
-                    fontSize = 14.sp
-                )
+            Text(
+                text = PersianFormatters.formatPrice(rate.price),
+                style = MaterialTheme.typography.displayLarge,
+                color = palette.textPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 40.sp,
+                letterSpacing = (-0.8).sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = rate.unit,
+                color = palette.textSecondary,
+                fontSize = 14.sp
+            )
 
-                val diff = rate.changeAmount ?: rate.previousPrice?.let { rate.price - it }
+            val diff = rate.changeAmount ?: rate.previousPrice?.let { rate.price - it }
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (rate.changePercent != null) {
+                    Text(
+                        text = PersianFormatters.formatPercentage(rate.changePercent),
+                        color = trendColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                }
                 if (diff != null && abs(diff) > 0) {
-                    Spacer(modifier = Modifier.height(8.dp))
                     val sign = if (diff >= 0) "+" else "−"
                     Text(
-                        text = "$sign${PersianFormatters.formatPrice(abs(diff))} تومان",
+                        text = "$sign${PersianFormatters.formatPrice(abs(diff))}",
                         color = if (diff >= 0) palette.increase else palette.decrease,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
+            }
 
-                if (rate.highPrice != null && rate.lowPrice != null) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text("بازه روز", color = palette.textSecondary, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
+            if (rate.highPrice != null && rate.lowPrice != null) {
+                Spacer(modifier = Modifier.height(36.dp))
+                Text("بازه روز", color = palette.textSecondary, fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(palette.card)
+                ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(palette.border)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(rangeProgress)
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(palette.decrease.copy(alpha = 0.7f), palette.accent, palette.increase)
+                            .fillMaxWidth(rangeProgress)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        palette.decrease.copy(alpha = 0.55f),
+                                        palette.accent,
+                                        palette.increase.copy(alpha = 0.8f)
                                     )
                                 )
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            PersianFormatters.formatPrice(rate.lowPrice),
-                            color = palette.textSecondary,
-                            fontSize = 11.sp
-                        )
-                        Text(
-                            PersianFormatters.formatPrice(rate.highPrice),
-                            color = palette.textSecondary,
-                            fontSize = 11.sp
-                        )
-                    }
+                            )
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        PersianFormatters.formatPrice(rate.lowPrice),
+                        color = palette.textSecondary,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        PersianFormatters.formatPrice(rate.highPrice),
+                        color = palette.textSecondary,
+                        fontSize = 12.sp
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            DetailMetaCard("منبع", providerLabel.removePrefix("منبع: ").ifBlank { rate.provider })
-            DetailMetaCard(
-                "بروزرسانی",
-                if (rate.updatedAt > 0) PersianFormatters.formatFullDateTime(rate.updatedAt) else "—"
-            )
+            if (rate.updatedAt > 0) {
+                DetailMetaRow(
+                    "بروزرسانی",
+                    PersianFormatters.formatFullDateTime(rate.updatedAt)
+                )
+            }
             if (rate.previousPrice != null) {
-                DetailMetaCard(
+                DetailMetaRow(
                     "قیمت قبلی",
                     "${PersianFormatters.formatPrice(rate.previousPrice)} تومان"
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = if (isAlertEnabled) {
-                    "اعلان نوسان این نرخ فعال است"
+                    "اعلان نوسان فعال است"
                 } else {
-                    "برای دریافت اعلان، زنگوله را فعال کنید"
+                    "برای اعلان، زنگوله را فعال کنید"
                 },
-                color = palette.textSecondary,
+                color = palette.textSecondary.copy(alpha = 0.75f),
                 fontSize = 12.sp
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 
@@ -317,16 +311,12 @@ fun DetailScreen(
 }
 
 @Composable
-private fun DetailMetaCard(label: String, value: String) {
+private fun DetailMetaRow(label: String, value: String) {
     val palette = LocalAppPalette.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(palette.card)
-            .border(1.dp, palette.border.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

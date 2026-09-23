@@ -116,7 +116,6 @@ fun MarketRatesApp(viewModel: MarketRatesViewModel) {
                             rate = rate,
                             isFavorite = rate.id in uiState.favoriteIds,
                             isAlertEnabled = rate.id in uiState.alertRateIds && uiState.alertsEnabled,
-                            providerLabel = viewModel.providerLabel(),
                             onBackClick = { viewModel.selectRate(null) },
                             onToggleFavorite = { viewModel.toggleFavorite(rate.id) },
                             onToggleAlert = {
@@ -141,7 +140,6 @@ private fun HomeContent(viewModel: MarketRatesViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HomeScreen(
         uiState = uiState,
-        providerLabel = viewModel.providerLabel(),
         onRefresh = { viewModel.refresh() },
         onCategorySelected = { viewModel.selectCategory(it) },
         onRateClick = { viewModel.selectRate(it) },

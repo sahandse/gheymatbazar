@@ -61,7 +61,6 @@ import com.example.ui.theme.LocalAppPalette
 @Composable
 fun HomeScreen(
     uiState: MarketRatesUiState,
-    providerLabel: String,
     onRefresh: () -> Unit,
     onCategorySelected: (MarketCategory) -> Unit,
     onRateClick: (String) -> Unit,
@@ -105,21 +104,21 @@ fun HomeScreen(
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(palette.accent.copy(alpha = 0.08f), Color.Transparent),
-                    center = Offset(size.width * 0.85f, size.height * 0.08f),
-                    radius = size.width * 0.75f
+                    colors = listOf(palette.accent.copy(alpha = 0.14f), Color.Transparent),
+                    center = Offset(size.width * 0.78f, -size.height * 0.02f),
+                    radius = size.width * 1.05f
                 ),
-                center = Offset(size.width * 0.85f, size.height * 0.08f),
-                radius = size.width * 0.75f
+                center = Offset(size.width * 0.78f, -size.height * 0.02f),
+                radius = size.width * 1.05f
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(palette.increase.copy(alpha = 0.04f), Color.Transparent),
-                    center = Offset(size.width * 0.1f, size.height * 0.55f),
-                    radius = size.width * 0.55f
+                    colors = listOf(palette.increase.copy(alpha = 0.05f), Color.Transparent),
+                    center = Offset(size.width * -0.05f, size.height * 0.62f),
+                    radius = size.width * 0.9f
                 ),
-                center = Offset(size.width * 0.1f, size.height * 0.55f),
-                radius = size.width * 0.55f
+                center = Offset(size.width * -0.05f, size.height * 0.62f),
+                radius = size.width * 0.9f
             )
         }
 
@@ -135,7 +134,6 @@ fun HomeScreen(
                         lastUpdated = uiState.lastUpdated,
                         isLoading = uiState.isLoading,
                         isOffline = uiState.isOffline,
-                        providerLabel = providerLabel,
                         onRefresh = onRefresh,
                         onToggleConverter = onToggleConverter,
                         isConverterVisible = uiState.showConverter,
@@ -218,16 +216,15 @@ fun HomeScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (uiState.compactList) 6.dp else 10.dp)
+                        .padding(horizontal = 22.dp),
+                    contentPadding = PaddingValues(top = 14.dp, bottom = 36.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (uiState.compactList) 6.dp else 8.dp)
                 ) {
                     item(key = "header") {
                         MarketRatesHeader(
                             lastUpdated = uiState.lastUpdated,
                             isLoading = uiState.isLoading,
                             isOffline = uiState.isOffline,
-                            providerLabel = providerLabel,
                             onRefresh = onRefresh,
                             onToggleConverter = onToggleConverter,
                             isConverterVisible = uiState.showConverter,
@@ -243,10 +240,14 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .testTag("search_field"),
                             placeholder = {
-                                Text("جستجوی طلا، ارز یا رمز‌ارز…", color = palette.textSecondary)
+                                Text("جستجو…", color = palette.textSecondary.copy(alpha = 0.7f))
                             },
                             leadingIcon = {
-                                Icon(Icons.Default.Search, null, tint = palette.textSecondary)
+                                Icon(
+                                    Icons.Default.Search,
+                                    null,
+                                    tint = palette.textSecondary.copy(alpha = 0.7f)
+                                )
                             },
                             trailingIcon = {
                                 if (uiState.searchQuery.isNotEmpty()) {
@@ -256,16 +257,16 @@ fun HomeScreen(
                                 }
                             },
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(18.dp),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = palette.accent,
-                                unfocusedBorderColor = palette.border,
+                                focusedBorderColor = palette.accent.copy(alpha = 0.45f),
+                                unfocusedBorderColor = Color.Transparent,
                                 focusedTextColor = palette.textPrimary,
                                 unfocusedTextColor = palette.textPrimary,
                                 cursorColor = palette.accent,
-                                focusedContainerColor = palette.card,
-                                unfocusedContainerColor = palette.card
+                                focusedContainerColor = palette.card.copy(alpha = 0.9f),
+                                unfocusedContainerColor = palette.card.copy(alpha = 0.72f)
                             )
                         )
                     }

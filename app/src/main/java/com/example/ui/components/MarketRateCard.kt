@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -35,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
@@ -62,14 +60,14 @@ fun MarketRateCard(
 ) {
     val palette = LocalAppPalette.current
     val enterAlpha = remember { Animatable(0f) }
-    val enterOffset = remember { Animatable(14f) }
+    val enterOffset = remember { Animatable(10f) }
     LaunchedEffect(rate.id) {
         enterAlpha.snapTo(0f)
-        enterOffset.snapTo(14f)
+        enterOffset.snapTo(10f)
         launch {
-            enterAlpha.animateTo(1f, tween(320, easing = FastOutSlowInEasing))
+            enterAlpha.animateTo(1f, tween(280, easing = FastOutSlowInEasing))
         }
-        enterOffset.animateTo(0f, tween(320, easing = FastOutSlowInEasing))
+        enterOffset.animateTo(0f, tween(280, easing = FastOutSlowInEasing))
     }
     val flashBg by animateColorAsState(
         targetValue = when (flashType) {
@@ -89,16 +87,16 @@ fun MarketRateCard(
     }
     val accentBar = when {
         isFavorite -> palette.accent
-        changePercent != null && changePercent > 0 -> palette.increase.copy(alpha = 0.55f)
-        changePercent != null && changePercent < 0 -> palette.decrease.copy(alpha = 0.55f)
-        else -> palette.border
+        changePercent != null && changePercent > 0 -> palette.increase.copy(alpha = 0.45f)
+        changePercent != null && changePercent < 0 -> palette.decrease.copy(alpha = 0.45f)
+        else -> Color.Transparent
     }
 
-    val rowHeight: Dp = if (compact) 58.dp else 74.dp
-    val iconSize: Dp = if (compact) 32.dp else 40.dp
-    val nameSize = if (compact) 13.sp else 14.sp
-    val priceSize = if (compact) 14.sp else 15.sp
-    val corner = if (compact) 14.dp else 18.dp
+    val rowHeight: Dp = if (compact) 56.dp else 72.dp
+    val iconSize: Dp = if (compact) 30.dp else 38.dp
+    val nameSize = if (compact) 13.sp else 15.sp
+    val priceSize = if (compact) 14.sp else 16.sp
+    val corner = if (compact) 16.dp else 20.dp
 
     Row(
         modifier = modifier
@@ -108,19 +106,11 @@ fun MarketRateCard(
                 translationY = enterOffset.value
             }
             .clip(RoundedCornerShape(corner))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        palette.card,
-                        palette.card.copy(alpha = 0.94f)
-                    )
-                )
-            )
-            .border(1.dp, palette.border.copy(alpha = 0.6f), RoundedCornerShape(corner))
+            .background(palette.card.copy(alpha = 0.88f))
             .background(flashBg)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = palette.accent.copy(alpha = 0.12f)),
+                indication = ripple(color = palette.accent.copy(alpha = 0.1f)),
                 onClick = onClick
             )
             .testTag("rate_card_${rate.id.lowercase()}")
@@ -131,23 +121,21 @@ fun MarketRateCard(
             modifier = Modifier
                 .width(3.dp)
                 .fillMaxHeight()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(accentBar, accentBar.copy(alpha = 0.35f))
-                    )
-                )
+                .padding(vertical = 14.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(accentBar)
         )
 
         IconButton(
             onClick = onToggleFavorite,
             modifier = Modifier
-                .size(if (compact) 32.dp else 36.dp)
+                .size(if (compact) 34.dp else 38.dp)
                 .testTag("favorite_${rate.id.lowercase()}")
         ) {
             Icon(
                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
                 contentDescription = if (isFavorite) "حذف از علاقه‌مندی" else "افزودن به علاقه‌مندی",
-                tint = if (isFavorite) palette.accent else palette.textSecondary,
+                tint = if (isFavorite) palette.accent else palette.textSecondary.copy(alpha = 0.55f),
                 modifier = Modifier.size(if (compact) 16.dp else 18.dp)
             )
         }
@@ -156,21 +144,16 @@ fun MarketRateCard(
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(palette.cardSecondary, palette.background.copy(alpha = 0.5f))
-                    )
-                )
-                .border(1.dp, palette.border.copy(alpha = 0.8f), CircleShape),
+                .background(palette.cardSecondary.copy(alpha = 0.85f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = MarketAssetHelper.getAssetIcon(rate.id),
-                fontSize = if (compact) 14.sp else 16.sp
+                fontSize = if (compact) 13.sp else 15.sp
             )
         }
 
-        Spacer(modifier = Modifier.width(if (compact) 8.dp else 10.dp))
+        Spacer(modifier = Modifier.width(if (compact) 8.dp else 12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -184,7 +167,7 @@ fun MarketRateCard(
                 Text(
                     text = rate.symbol,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = palette.textSecondary,
+                    color = palette.textSecondary.copy(alpha = 0.85f),
                     fontSize = 11.sp
                 )
             }
@@ -192,7 +175,7 @@ fun MarketRateCard(
 
         Column(
             horizontalAlignment = Alignment.End,
-            modifier = Modifier.padding(end = if (compact) 12.dp else 14.dp)
+            modifier = Modifier.padding(end = if (compact) 14.dp else 16.dp)
         ) {
             Text(
                 text = PersianFormatters.formatPrice(rate.price),

@@ -235,12 +235,5 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.update { it.copy(showSettings = show) }
     }
 
-    fun providerLabel(): String {
-        return when (_uiState.value.provider?.lowercase()) {
-            "muchtoman" -> "منبع: muchToman"
-            "tgju" -> "منبع: TGJU"
-            null, "" -> "منبع: —"
-            else -> "منبع: ${_uiState.value.provider}"
-        }
-    }
+    fun providerLabel(): String = ""
 }
