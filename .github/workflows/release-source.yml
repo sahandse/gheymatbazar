@@ -47,8 +47,12 @@ jobs:
           APK/AAB امضاشده فقط با keystore امن تولید می‌شوند و کلید خصوصی داخل ریپوی عمومی ذخیره نمی‌شود.
           EOF
           )
+
+          # Recreate the release/tag so it always targets the exact final production commit.
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "قیمت بازار ${APP_VERSION}" --notes "$BODY"
-          else
-            gh release create "$TAG" --target "$GITHUB_SHA" --title "قیمت بازار ${APP_VERSION}" --notes "$BODY"
+            gh release delete "$TAG" --yes --cleanup-tag
           fi
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "قیمت بازار ${APP_VERSION}" \
+            --notes "$BODY"
