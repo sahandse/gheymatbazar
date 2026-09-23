@@ -177,7 +177,7 @@ fun HomeScreen(
 
                 val carouselIcon = when (uiState.selectedCategory) {
                     MarketCategory.GOLD -> "●"
-                    MarketCategory.CURRENCY -> "$"
+                    MarketCategory.CURRENCY -> "＄"
                     MarketCategory.CRYPTO -> "₿"
                 }
 
