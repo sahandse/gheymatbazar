@@ -1,0 +1,121 @@
+package com.example.util
+
+object MarketAssetHelper {
+
+    fun getAssetIcon(id: String): String {
+        return when (id.uppercase()) {
+            // Fiat Currencies (Flags)
+            "USD" -> "🇺🇸"
+            "EUR" -> "🇪🇺"
+            "GBP" -> "🇬🇧"
+            "AED" -> "🇦🇪"
+            "TRY" -> "🇹🇷"
+            "CAD" -> "🇨🇦"
+            "AUD" -> "🇦🇺"
+            "CHF" -> "🇨🇭"
+            "CNY" -> "🇨🇳"
+            "JPY" -> "🇯🇵"
+            "KWD" -> "🇰🇼"
+            "IQD" -> "🇮🇶"
+            "QAR" -> "🇶🇦"
+            "OMR" -> "🇴🇲"
+            "SAR" -> "🇸🇦"
+            "RUB" -> "🇷🇺"
+            "SEK" -> "🇸🇪"
+            "NOK" -> "🇳🇴"
+            "INR" -> "🇮🇳"
+            "AZN" -> "🇦🇿"
+            "GEL" -> "🇬🇪"
+            "AMD" -> "🇦🇲"
+
+            // Gold & Coins
+            "GOLD_18K" -> "🥇"
+            "GOLD_24K" -> "👑"
+            "GOLD_MESGHAL" -> "⚖️"
+            "GOLD_MELT" -> "🧈"
+            "COIN_EMAMI" -> "🪙"
+            "COIN_BAHAR" -> "🪙"
+            "COIN_NIM" -> "🟡"
+            "COIN_ROB" -> "🔸"
+            "COIN_GERAMI" -> "🔹"
+            "COIN_PARSIAN" -> "💎"
+            "SILVER_999", "SILVER" -> "⚪"
+
+            // Crypto
+            "BTC" -> "₿"
+            "ETH" -> "⟠"
+            "USDT" -> "₮"
+            "SOL" -> "🟣"
+            "BNB" -> "🟡"
+            "TON" -> "💎"
+            "XRP" -> "✕"
+            "DOGE" -> "🐶"
+            "ADA" -> "₳"
+            "TRX" -> "🔴"
+            "AVAX" -> "🔺"
+            "SHIB" -> "🐕"
+            "PEPE" -> "🐸"
+            "DOT" -> "⚫"
+            "LINK" -> "🔗"
+
+            else -> "💰"
+        }
+    }
+
+    fun getCountryOrCategoryLabel(id: String): String {
+        return when (id.uppercase()) {
+            "USD" -> "ایالات متحده"
+            "EUR" -> "اتحادیه اروپا"
+            "GBP" -> "بریتانیا"
+            "AED" -> "امارات"
+            "TRY" -> "ترکیه"
+            "CAD" -> "کانادا"
+            "AUD" -> "استرالیا"
+            "CHF" -> "سوئیس"
+            "CNY" -> "چین"
+            "JPY" -> "ژاپن"
+            "KWD" -> "کویت"
+            "IQD" -> "عراق"
+            "QAR" -> "قطر"
+            "OMR" -> "عمان"
+            "SAR" -> "عربستان"
+            "RUB" -> "روسیه"
+            "SEK" -> "سوئد"
+            "NOK" -> "نروژ"
+            "INR" -> "هندوستان"
+            "AZN" -> "آذربایجان"
+            "GEL" -> "گرجستان"
+            "AMD" -> "ارمنستان"
+
+            "GOLD_18K" -> "عیار ۷۵۰"
+            "GOLD_24K" -> "شمش خالص"
+            "GOLD_MESGHAL" -> "۴.۶۰۸ گرم"
+            "GOLD_MELT" -> "آبشده بازار"
+            "COIN_EMAMI" -> "۸.۱۳۳ گرم"
+            "COIN_BAHAR" -> "۸.۱۳۳ گرم"
+            "COIN_NIM" -> "۴.۰۶۶ گرم"
+            "COIN_ROB" -> "۲.۰۳۳ گرم"
+            "COIN_GERAMI" -> "۱.۱۰۲ گرم"
+            "COIN_PARSIAN" -> "۱.۰۰۰ گرم"
+            "SILVER_999", "SILVER" -> "عیار ۹۹.۹٪"
+
+            "BTC" -> "پادشاه رمزارزها"
+            "ETH" -> "قراردادهای هوشمند"
+            "USDT" -> "دلار دیجیتال"
+            "SOL" -> "سرعت بالا"
+            "BNB" -> "اکوسیستم بایننس"
+            "TON" -> "شبکه تلگرام"
+            "XRP" -> "پرداخت بین‌المللی"
+            "DOGE" -> "میم‌کوین برتر"
+            "ADA" -> "اثبات سهام"
+            "TRX" -> "شبکه ترون"
+            "AVAX" -> "قرارداد هوشمند"
+            "SHIB" -> "اکوسیستم شیبا"
+            "PEPE" -> "میم محبوب"
+            "DOT" -> "قابلیت همکاری"
+            "LINK" -> "شبکه اوراکل"
+
+            else -> "بازار"
+        }
+    }
+}
