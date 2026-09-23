@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -109,7 +111,28 @@ private fun HighlightCard(
             fontWeight = FontWeight.Bold,
             maxLines = 1
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        val previous = rate.previousPrice
+        if (previous != null && previous != rate.price) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(18.dp)
+            ) {
+                val rising = rate.price >= previous
+                val startY = if (rising) size.height * 0.72f else size.height * 0.28f
+                val endY = if (rising) size.height * 0.28f else size.height * 0.72f
+                drawLine(
+                    color = changeColor,
+                    start = Offset(0f, startY),
+                    end = Offset(size.width, endY),
+                    strokeWidth = 3f
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
         Text(
             text = change?.let { PersianFormatters.formatPercentage(it) } ?: rate.unit,
             color = changeColor,
