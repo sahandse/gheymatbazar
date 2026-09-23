@@ -2,20 +2,20 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark Mode Palette
+// Minimal dark financial palette
 val DarkBackground = Color(0xFF090A0C)
-val CardBackground = Color(0xFF14161A)
-val CardSecondary = Color(0xFF191B20)
-val CardBorder = Color(0xFF22262E)
+val CardBackground = Color(0xFF111317)
+val CardSecondary = Color(0xFF171A1F)
+val CardBorder = Color(0xFF242830)
 
-val TextPrimary = Color(0xFFF5F5F5)
-val TextSecondary = Color(0xFF8B9098)
-val TextTertiary = Color(0xFF5E636E)
+val TextPrimary = Color(0xFFF7F7F8)
+val TextSecondary = Color(0xFF9A9FA8)
+val TextTertiary = Color(0xFF686E78)
 
-val RateIncrease = Color(0xFF26C281)
-val RateDecrease = Color(0xFFFF5A65)
-val GoldAccent = Color(0xFFD9A441)
-val GoldAccentDim = Color(0x26D9A441)
+val RateIncrease = Color(0xFF2EC98A)
+val RateDecrease = Color(0xFFFF6670)
+val GoldAccent = Color(0xFFE0AC4F)
+val GoldAccentDim = Color(0x20E0AC4F)
 
-val RateIncreaseBg = Color(0x1F26C281)
-val RateDecreaseBg = Color(0x1FFF5A65)
+val RateIncreaseBg = Color(0x182EC98A)
+val RateDecreaseBg = Color(0x18FF6670)
