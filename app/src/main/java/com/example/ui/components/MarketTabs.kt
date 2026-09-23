@@ -3,7 +3,6 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -38,9 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.MarketCategory
+import com.example.ui.theme.CardBackground
 import com.example.ui.theme.DarkBackground
 import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 
 @Composable
@@ -49,55 +47,42 @@ fun MarketTabs(
     onCategorySelected: (MarketCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF13151B))
-            .border(
-                1.dp,
-                Brush.verticalGradient(listOf(Color(0xFF262B36), Color(0xFF181B22))),
-                RoundedCornerShape(20.dp)
-            )
-            .padding(5.dp)
-            .testTag("market_category_tabs")
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardBackground)
+            .padding(4.dp)
+            .testTag("market_category_tabs"),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            MarketTabItem(
-                title = "طلا و سکه",
-                icon = Icons.Default.Savings,
-                isSelected = selectedCategory == MarketCategory.GOLD,
-                onClick = { onCategorySelected(MarketCategory.GOLD) },
-                modifier = Modifier.weight(1f),
-                testTag = "tab_gold"
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            MarketTabItem(
-                title = "دلار و ارزها",
-                icon = Icons.Default.AccountBalance,
-                isSelected = selectedCategory == MarketCategory.CURRENCY,
-                onClick = { onCategorySelected(MarketCategory.CURRENCY) },
-                modifier = Modifier.weight(1f),
-                testTag = "tab_currency"
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            MarketTabItem(
-                title = "ارز دیجیتال",
-                icon = Icons.Default.CurrencyBitcoin,
-                isSelected = selectedCategory == MarketCategory.CRYPTO,
-                onClick = { onCategorySelected(MarketCategory.CRYPTO) },
-                modifier = Modifier.weight(1f),
-                testTag = "tab_crypto"
-            )
-        }
+        MarketTabItem(
+            title = "طلا و سکه",
+            icon = Icons.Default.Savings,
+            isSelected = selectedCategory == MarketCategory.GOLD,
+            onClick = { onCategorySelected(MarketCategory.GOLD) },
+            modifier = Modifier.weight(1f),
+            testTag = "tab_gold"
+        )
+        Spacer(Modifier.width(4.dp))
+        MarketTabItem(
+            title = "ارز",
+            icon = Icons.Default.AccountBalance,
+            isSelected = selectedCategory == MarketCategory.CURRENCY,
+            onClick = { onCategorySelected(MarketCategory.CURRENCY) },
+            modifier = Modifier.weight(1f),
+            testTag = "tab_currency"
+        )
+        Spacer(Modifier.width(4.dp))
+        MarketTabItem(
+            title = "رمزارز",
+            icon = Icons.Default.CurrencyBitcoin,
+            isSelected = selectedCategory == MarketCategory.CRYPTO,
+            onClick = { onCategorySelected(MarketCategory.CRYPTO) },
+            modifier = Modifier.weight(1f),
+            testTag = "tab_crypto"
+        )
     }
 }
 
@@ -110,32 +95,25 @@ private fun MarketTabItem(
     modifier: Modifier = Modifier,
     testTag: String
 ) {
-    val animatedBg by animateColorAsState(
+    val background by animateColorAsState(
         targetValue = if (isSelected) GoldAccent else Color.Transparent,
-        animationSpec = tween(durationMillis = 250),
-        label = "tabBg"
+        animationSpec = tween(180),
+        label = "tabBackground"
     )
-
-    val animatedTextColor by animateColorAsState(
+    val foreground by animateColorAsState(
         targetValue = if (isSelected) DarkBackground else TextSecondary,
-        animationSpec = tween(durationMillis = 250),
-        label = "tabText"
-    )
-
-    val animatedIconColor by animateColorAsState(
-        targetValue = if (isSelected) DarkBackground else TextSecondary,
-        animationSpec = tween(durationMillis = 250),
-        label = "tabIcon"
+        animationSpec = tween(180),
+        label = "tabForeground"
     )
 
     Box(
         modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(animatedBg)
+            .height(42.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(background)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = GoldAccent.copy(alpha = 0.2f)),
+                indication = ripple(color = GoldAccent.copy(alpha = 0.18f)),
                 onClick = onClick
             )
             .testTag(testTag),
@@ -143,22 +121,16 @@ private fun MarketTabItem(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 6.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = animatedIconColor,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
+            Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(15.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
-                color = animatedTextColor,
+                color = foreground,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 12.5.sp
+                fontSize = 12.sp
             )
         }
     }
