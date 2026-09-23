@@ -19,8 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.R
-import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.LocalAppPalette
 import kotlinx.coroutines.delay
 
 @Composable
@@ -28,6 +27,7 @@ fun SplashScreen(
     onTimeout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalAppPalette.current
     val scale = remember { Animatable(0.85f) }
     val alpha = remember { Animatable(0f) }
 
@@ -47,10 +47,9 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground),
+            .background(palette.background),
         contentAlignment = Alignment.Center
     ) {
-        // Glowing halo behind logo
         Box(
             modifier = Modifier
                 .size(140.dp)
@@ -58,7 +57,7 @@ fun SplashScreen(
                 .alpha(alpha.value * 0.5f)
                 .background(
                     androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(com.example.ui.theme.GoldAccent.copy(alpha = 0.35f), androidx.compose.ui.graphics.Color.Transparent)
+                        colors = listOf(palette.accent.copy(alpha = 0.35f), androidx.compose.ui.graphics.Color.Transparent)
                     ),
                     shape = CircleShape
                 )

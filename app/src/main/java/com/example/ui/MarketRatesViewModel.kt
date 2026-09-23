@@ -6,7 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
 import com.example.data.local.MarketRateEntity
 import com.example.data.model.MarketCategory
+import com.example.data.prefs.AppPreferences
+import com.example.data.prefs.AppUserPrefs
 import com.example.data.repository.MarketRateRepository
+import com.example.util.PriceAlertNotifier
+import com.example.widget.MarketRatesWidgetProvider
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,47 +34,87 @@ data class MarketRatesUiState(
     val lastUpdated: Long? = null,
     val provider: String? = null,
     val priceFlashMap: Map<String, PriceFlashType> = emptyMap(),
-    val selectedRateId: String? = null
+    val selectedRateId: String? = null,
+    val searchQuery: String = "",
+    val favoriteIds: Set<String> = AppUserPrefs.DEFAULT_FAVORITES,
+    val alertRateIds: Set<String> = AppUserPrefs.DEFAULT_FAVORITES,
+    val alertsEnabled: Boolean = true,
+    val isDarkTheme: Boolean = true,
+    val widgetSlot1: String = "USD",
+    val widgetSlot2: String = "GOLD_18K",
+    val widgetSlot3: String = "COIN_EMAMI",
+    val widgetSlot4: String = "USDT",
+    val showConverter: Boolean = false,
+    val showChart: Boolean = false,
+    val showSettings: Boolean = false
 )
 
 class MarketRatesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: MarketRateRepository
+    private val preferences = AppPreferences(application)
     private val _uiState = MutableStateFlow(MarketRatesUiState(isLoading = true))
     val uiState: StateFlow<MarketRatesUiState> = _uiState.asStateFlow()
 
     private var previousPrices = mutableMapOf<String, Double>()
     private var autoRefreshJob: Job? = null
+    private var alertsReady = false
 
     init {
+        PriceAlertNotifier.ensureChannel(application)
         val database = AppDatabase.getDatabase(application)
         repository = MarketRateRepository(database.marketRateDao())
 
-        // Ensure baseline catalog exists in database
         viewModelScope.launch {
             repository.ensureInitialized()
         }
 
-        // Collect Room database rates
+        viewModelScope.launch {
+            preferences.prefsFlow.collectLatest { prefs ->
+                _uiState.update {
+                    it.copy(
+                        favoriteIds = prefs.favoriteIds,
+                        alertRateIds = prefs.alertRateIds,
+                        alertsEnabled = prefs.alertsEnabled,
+                        isDarkTheme = prefs.isDarkTheme,
+                        widgetSlot1 = prefs.widgetSlot1,
+                        widgetSlot2 = prefs.widgetSlot2,
+                        widgetSlot3 = prefs.widgetSlot3,
+                        widgetSlot4 = prefs.widgetSlot4
+                    )
+                }
+                MarketRatesWidgetProvider.updateAllWidgets(application)
+            }
+        }
+
         viewModelScope.launch {
             repository.rates.collectLatest { rateList ->
                 if (rateList.isNotEmpty()) {
-                    // Update home screen widget
-                    com.example.widget.MarketRatesWidgetProvider.updateAllWidgets(application)
+                    MarketRatesWidgetProvider.updateAllWidgets(application)
 
-                    // Determine price flash animations
                     val newFlashes = mutableMapOf<String, PriceFlashType>()
                     for (rate in rateList) {
                         val prev = previousPrices[rate.id]
                         if (prev != null && prev > 0.0 && prev != rate.price) {
-                            if (rate.price > prev) {
-                                newFlashes[rate.id] = PriceFlashType.INCREASE
-                            } else {
-                                newFlashes[rate.id] = PriceFlashType.DECREASE
-                            }
+                            newFlashes[rate.id] =
+                                if (rate.price > prev) PriceFlashType.INCREASE else PriceFlashType.DECREASE
                         }
+                    }
+
+                    val state = _uiState.value
+                    if (alertsReady && state.alertsEnabled) {
+                        PriceAlertNotifier.notifySignificantChanges(
+                            context = application,
+                            rates = rateList,
+                            previousPrices = previousPrices.toMap(),
+                            alertRateIds = state.alertRateIds
+                        )
+                    }
+
+                    for (rate in rateList) {
                         previousPrices[rate.id] = rate.price
                     }
+                    alertsReady = true
 
                     val latestUpdate = rateList.maxOfOrNull { it.updatedAt }
                     val currentProvider = rateList.firstOrNull { it.provider.isNotEmpty() }?.provider
@@ -86,7 +130,6 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
                     }
 
                     if (newFlashes.isNotEmpty()) {
-                        // Reset flash after 1.5 seconds
                         viewModelScope.launch {
                             delay(1500)
                             _uiState.update { it.copy(priceFlashMap = emptyMap()) }
@@ -96,10 +139,7 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
 
-        // Initial fetch
         refresh()
-
-        // Start 5-minute auto-refresh cycle
         startAutoRefresh()
     }
 
@@ -117,7 +157,6 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
                     )
                 }
             } else {
-                // If failed, check if we have cached rates
                 val hasCache = _uiState.value.rates.isNotEmpty()
                 _uiState.update {
                     it.copy(
@@ -134,17 +173,72 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
         autoRefreshJob?.cancel()
         autoRefreshJob = viewModelScope.launch {
             while (isActive) {
-                delay(5 * 60 * 1000L) // 5 minutes
+                delay(5 * 60 * 1000L)
                 refresh()
             }
         }
     }
 
     fun selectCategory(category: MarketCategory) {
-        _uiState.update { it.copy(selectedCategory = category) }
+        _uiState.update { it.copy(selectedCategory = category, showChart = false) }
     }
 
     fun selectRate(rateId: String?) {
         _uiState.update { it.copy(selectedRateId = rateId) }
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun toggleFavorite(rateId: String) {
+        viewModelScope.launch { preferences.toggleFavorite(rateId) }
+    }
+
+    fun toggleAlertRate(rateId: String) {
+        viewModelScope.launch { preferences.toggleAlertRate(rateId) }
+    }
+
+    fun setAlertForRate(rateId: String, enabled: Boolean) {
+        viewModelScope.launch {
+            if (enabled) preferences.setAlertsEnabled(true)
+            preferences.setAlertRate(rateId, enabled)
+        }
+    }
+
+    fun setAlertsEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setAlertsEnabled(enabled) }
+    }
+
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch { preferences.setDarkTheme(enabled) }
+    }
+
+    fun setWidgetSlots(slot1: String, slot2: String, slot3: String, slot4: String) {
+        viewModelScope.launch {
+            preferences.setWidgetSlots(slot1, slot2, slot3, slot4)
+            MarketRatesWidgetProvider.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun setShowConverter(show: Boolean) {
+        _uiState.update { it.copy(showConverter = show) }
+    }
+
+    fun setShowChart(show: Boolean) {
+        _uiState.update { it.copy(showChart = show) }
+    }
+
+    fun setShowSettings(show: Boolean) {
+        _uiState.update { it.copy(showSettings = show) }
+    }
+
+    fun providerLabel(): String {
+        return when (_uiState.value.provider?.lowercase()) {
+            "muchtoman" -> "منبع: muchToman"
+            "tgju" -> "منبع: TGJU"
+            null, "" -> "منبع: —"
+            else -> "منبع: ${_uiState.value.provider}"
+        }
     }
 }

@@ -15,7 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -32,14 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.MarketRateEntity
 import com.example.ui.PriceFlashType
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.RateDecrease
-import com.example.ui.theme.RateIncrease
-import com.example.ui.theme.RateIncreaseBg
-import com.example.ui.theme.RateDecreaseBg
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.LocalAppPalette
 import com.example.util.MarketAssetHelper
 import com.example.util.PersianFormatters
 
@@ -47,13 +45,16 @@ import com.example.util.PersianFormatters
 fun MarketRateCard(
     rate: MarketRateEntity,
     flashType: PriceFlashType,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalAppPalette.current
     val flashBg by animateColorAsState(
         targetValue = when (flashType) {
-            PriceFlashType.INCREASE -> RateIncreaseBg.copy(alpha = 0.25f)
-            PriceFlashType.DECREASE -> RateDecreaseBg.copy(alpha = 0.25f)
+            PriceFlashType.INCREASE -> palette.increaseBg
+            PriceFlashType.DECREASE -> palette.decreaseBg
             PriceFlashType.NONE -> Color.Transparent
         },
         animationSpec = tween(durationMillis = 350),
@@ -62,9 +63,9 @@ fun MarketRateCard(
 
     val changePercent = rate.changePercent
     val changeColor = when {
-        changePercent == null || changePercent == 0.0 -> TextSecondary
-        changePercent > 0 -> RateIncrease
-        else -> RateDecrease
+        changePercent == null || changePercent == 0.0 -> palette.textSecondary
+        changePercent > 0 -> palette.increase
+        else -> palette.decrease
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -74,10 +75,10 @@ fun MarketRateCard(
                 .background(flashBg)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
-                    indication = ripple(color = GoldAccent.copy(alpha = 0.12f)),
+                    indication = ripple(color = palette.accent.copy(alpha = 0.12f)),
                     onClick = onClick
                 )
-                .padding(vertical = 14.dp)
+                .padding(vertical = 12.dp)
                 .testTag("rate_card_${rate.id.lowercase()}"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -86,33 +87,47 @@ fun MarketRateCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .testTag("favorite_${rate.id.lowercase()}")
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                        contentDescription = if (isFavorite) "حذف از علاقه‌مندی" else "افزودن به علاقه‌مندی",
+                        tint = if (isFavorite) palette.accent else palette.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF161A20)),
+                        .background(palette.cardSecondary),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = MarketAssetHelper.getAssetIcon(rate.id),
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column {
                     Text(
                         text = rate.name,
                         style = MaterialTheme.typography.titleMedium,
-                        color = TextPrimary,
+                        color = palette.textPrimary,
                         fontWeight = FontWeight.Medium,
                         fontSize = 15.sp
                     )
                     Text(
                         text = rate.symbol,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
+                        color = palette.textSecondary,
                         fontSize = 12.sp
                     )
                 }
@@ -122,28 +137,23 @@ fun MarketRateCard(
                 Text(
                     text = PersianFormatters.formatPrice(rate.price),
                     style = MaterialTheme.typography.titleMedium,
-                    color = TextPrimary,
+                    color = palette.textPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
-                if (changePercent != null) {
-                    Text(
-                        text = PersianFormatters.formatPercentage(changePercent),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = changeColor,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
-                    )
-                } else {
-                    Text(
-                        text = rate.unit,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextSecondary,
-                        fontSize = 11.sp
-                    )
-                }
+                Text(
+                    text = if (changePercent != null) {
+                        PersianFormatters.formatPercentage(changePercent)
+                    } else {
+                        rate.unit
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = changeColor,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp
+                )
             }
         }
-        HorizontalDivider(color = CardBorder.copy(alpha = 0.5f), thickness = 0.5.dp)
+        HorizontalDivider(color = palette.border.copy(alpha = 0.5f), thickness = 0.5.dp)
     }
 }

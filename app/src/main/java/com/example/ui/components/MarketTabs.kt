@@ -16,16 +16,15 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.MarketCategory
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.LocalAppPalette
 
 @Composable
 fun MarketTabs(
@@ -33,6 +32,7 @@ fun MarketTabs(
     onCategorySelected: (MarketCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalAppPalette.current
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -64,7 +64,7 @@ fun MarketTabs(
                 testTag = "tab_crypto"
             )
         }
-        HorizontalDivider(color = CardBorder.copy(alpha = 0.5f), thickness = 1.dp)
+        HorizontalDivider(color = palette.border.copy(alpha = 0.5f), thickness = 1.dp)
     }
 }
 
@@ -76,13 +76,14 @@ private fun MarketTabItem(
     modifier: Modifier = Modifier,
     testTag: String
 ) {
+    val palette = LocalAppPalette.current
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) TextPrimary else TextSecondary,
+        targetValue = if (isSelected) palette.textPrimary else palette.textSecondary,
         animationSpec = tween(durationMillis = 200),
         label = "tabText"
     )
     val indicatorColor by animateColorAsState(
-        targetValue = if (isSelected) GoldAccent else CardBorder.copy(alpha = 0f),
+        targetValue = if (isSelected) palette.accent else palette.border.copy(alpha = 0f),
         animationSpec = tween(durationMillis = 200),
         label = "tabIndicator"
     )
@@ -91,10 +92,11 @@ private fun MarketTabItem(
         modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = GoldAccent.copy(alpha = 0.15f)),
+                indication = ripple(color = palette.accent.copy(alpha = 0.15f)),
                 onClick = onClick
             )
-            .testTag(testTag)
+            .testTag(testTag),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = title,
@@ -102,6 +104,7 @@ private fun MarketTabItem(
             color = textColor,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 14.sp,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 10.dp)
         )
         HorizontalDivider(color = indicatorColor, thickness = 2.dp)

@@ -12,7 +12,9 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.MarketRateEntity
+import com.example.data.prefs.AppPreferences
 import com.example.data.repository.MarketRateRepository
+import com.example.util.MarketAssetHelper
 import com.example.util.PersianFormatters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,18 +36,15 @@ class MarketRatesWidgetProvider : AppWidgetProvider() {
             updateWidgetFromLocalDatabase(context, appWidgetManager, widgetId)
         }
 
-        // Trigger background refresh in parallel
         scope.launch {
             try {
                 val db = AppDatabase.getDatabase(context)
                 val repository = MarketRateRepository(db.marketRateDao())
                 repository.refreshRates()
-                // Update all widgets with fresh data
                 for (widgetId in appWidgetIds) {
                     updateWidgetFromLocalDatabase(context, appWidgetManager, widgetId)
                 }
             } catch (_: Exception) {
-                // Ignore network errors in background widget refresh
             }
         }
     }
@@ -91,7 +90,6 @@ class MarketRatesWidgetProvider : AppWidgetProvider() {
         ) {
             val views = RemoteViews(context.packageName, R.layout.widget_market_rates)
 
-            // Setup click to launch app
             val mainIntent = Intent(context, MainActivity::class.java)
             val mainPendingIntent = PendingIntent.getActivity(
                 context,
@@ -101,7 +99,6 @@ class MarketRatesWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_root, mainPendingIntent)
 
-            // Setup refresh button click
             val refreshIntent = Intent(context, MarketRatesWidgetProvider::class.java).apply {
                 action = ACTION_REFRESH_WIDGET
             }
@@ -116,75 +113,84 @@ class MarketRatesWidgetProvider : AppWidgetProvider() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val db = AppDatabase.getDatabase(context)
-                    val rates: List<MarketRateEntity> = db.marketRateDao().getAllRates().firstOrNull() ?: emptyList()
+                    val rates: List<MarketRateEntity> =
+                        db.marketRateDao().getAllRates().firstOrNull() ?: emptyList()
+                    val prefs = AppPreferences(context).current()
 
-                    val dollar = rates.find { it.id == "USD" }
-                    val gold18k = rates.find { it.id == "GOLD_18K" }
-                    val coinEmami = rates.find { it.id == "COIN_EMAMI" }
-                    val usdt = rates.find { it.id == "USDT" }
+                    bindPrimarySlot(
+                        views,
+                        rates.find { it.id == prefs.widgetSlot1 },
+                        prefs.widgetSlot1,
+                        R.id.tv_widget_slot1_icon,
+                        R.id.tv_widget_slot1_name,
+                        R.id.tv_widget_slot1_price,
+                        R.id.tv_widget_slot1_change
+                    )
+                    bindPrimarySlot(
+                        views,
+                        rates.find { it.id == prefs.widgetSlot2 },
+                        prefs.widgetSlot2,
+                        R.id.tv_widget_slot2_icon,
+                        R.id.tv_widget_slot2_name,
+                        R.id.tv_widget_slot2_price,
+                        R.id.tv_widget_slot2_change
+                    )
 
-                    // Dollar display
-                    if (dollar != null) {
-                        views.setTextViewText(
-                            R.id.tv_widget_dollar_price,
-                            PersianFormatters.formatPrice(dollar.price) + " ت"
-                        )
-                        val pct = dollar.changePercent ?: 0.0
-                        views.setTextViewText(
-                            R.id.tv_widget_dollar_change,
-                            PersianFormatters.formatPercentage(pct)
-                        )
-                        views.setTextColor(
-                            R.id.tv_widget_dollar_change,
-                            if (pct >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
-                        )
-                    }
+                    val slot3 = rates.find { it.id == prefs.widgetSlot3 }
+                    val slot4 = rates.find { it.id == prefs.widgetSlot4 }
+                    views.setTextViewText(
+                        R.id.tv_widget_slot3_label,
+                        formatSubLabel(slot3, prefs.widgetSlot3)
+                    )
+                    views.setTextViewText(
+                        R.id.tv_widget_slot4_label,
+                        formatSubLabel(slot4, prefs.widgetSlot4)
+                    )
 
-                    // Gold display
-                    if (gold18k != null) {
-                        views.setTextViewText(
-                            R.id.tv_widget_gold_price,
-                            PersianFormatters.formatPrice(gold18k.price) + " ت"
-                        )
-                        val pct = gold18k.changePercent ?: 0.0
-                        views.setTextViewText(
-                            R.id.tv_widget_gold_change,
-                            PersianFormatters.formatPercentage(pct)
-                        )
-                        views.setTextColor(
-                            R.id.tv_widget_gold_change,
-                            if (pct >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
-                        )
-                    }
-
-                    // Sub row: Coin & USDT
-                    if (coinEmami != null) {
-                        views.setTextViewText(
-                            R.id.tv_widget_coin_label,
-                            "🪙 سکه: " + PersianFormatters.formatPrice(coinEmami.price)
-                        )
-                    }
-                    if (usdt != null) {
-                        views.setTextViewText(
-                            R.id.tv_widget_usdt_label,
-                            "₮ تتر: " + PersianFormatters.formatPrice(usdt.price)
-                        )
-                    }
-
-                    // Updated timestamp
-                    val latestTime = (dollar?.updatedAt ?: gold18k?.updatedAt ?: 0L)
-                    val timeStr = if (latestTime > 0) {
-                        "ساعت " + PersianFormatters.formatTime(latestTime)
-                    } else {
-                        "بروزرسانی زنده"
-                    }
-                    views.setTextViewText(R.id.tv_widget_updated_time, timeStr)
+                    val latestTime = listOfNotNull(slot3?.updatedAt, slot4?.updatedAt, rates.maxOfOrNull { it.updatedAt })
+                        .maxOrNull() ?: 0L
+                    views.setTextViewText(
+                        R.id.tv_widget_updated_time,
+                        if (latestTime > 0) "ساعت ${PersianFormatters.formatTime(latestTime)}" else "—"
+                    )
 
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 } catch (_: Exception) {
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
             }
+        }
+
+        private fun bindPrimarySlot(
+            views: RemoteViews,
+            rate: MarketRateEntity?,
+            fallbackId: String,
+            iconId: Int,
+            nameId: Int,
+            priceId: Int,
+            changeId: Int
+        ) {
+            views.setTextViewText(iconId, MarketAssetHelper.getAssetIcon(fallbackId))
+            views.setTextViewText(nameId, rate?.name ?: fallbackId)
+            if (rate != null) {
+                views.setTextViewText(priceId, PersianFormatters.formatPrice(rate.price) + " ت")
+                val pct = rate.changePercent ?: 0.0
+                views.setTextViewText(changeId, PersianFormatters.formatPercentage(pct))
+                views.setTextColor(
+                    changeId,
+                    if (pct >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                )
+            } else {
+                views.setTextViewText(priceId, "---")
+                views.setTextViewText(changeId, "—")
+            }
+        }
+
+        private fun formatSubLabel(rate: MarketRateEntity?, fallbackId: String): String {
+            val icon = MarketAssetHelper.getAssetIcon(fallbackId)
+            val name = rate?.name ?: fallbackId
+            val price = rate?.let { PersianFormatters.formatPrice(it.price) } ?: "---"
+            return "$icon $name: $price"
         }
     }
 }
