@@ -51,8 +51,8 @@ jobs:
             echo "SIGNING_READY=false" >> "$GITHUB_ENV"
             exit 0
           fi
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gheymatbazar-release.jks"
-          echo "KEYSTORE_PATH=$RUNNER_TEMP/gheymatbazar-release.jks" >> "$GITHUB_ENV"
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gheymatbazar-upload-key.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/gheymatbazar-upload-key.jks" >> "$GITHUB_ENV"
           echo "SIGNING_READY=true" >> "$GITHUB_ENV"
 
       - name: Build signed APK and AAB
@@ -70,16 +70,26 @@ jobs:
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
+      - name: Rename release files
+        if: env.SIGNING_READY == 'true'
+        shell: bash
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -1)
+          cp "$APK" "gheymatbazar-${APP_VERSION}-release.apk"
+          cp "$AAB" "gheymatbazar-${APP_VERSION}-release.aab"
+
       - name: Publish GitHub Release
         if: env.SIGNING_READY == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${APP_VERSION}"
-          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
-          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -1)
+          APK="gheymatbazar-${APP_VERSION}-release.apk"
+          AAB="gheymatbazar-${APP_VERSION}-release.aab"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; skipping."
+            echo "Release $TAG already exists; replacing assets."
+            gh release upload "$TAG" "$APK" "$AAB" --clobber
           else
             gh release create "$TAG" "$APK" "$AAB" \
               --target "$GITHUB_SHA" \
