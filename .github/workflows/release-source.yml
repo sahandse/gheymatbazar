@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - cursor/release-simpler-price-cards-f2d7
+    paths:
+      - 'app/build.gradle.kts'
+      - 'app/src/main/**'
+      - '.github/workflows/release-source.yml'
   workflow_dispatch:
 
 permissions:
@@ -30,11 +34,21 @@ jobs:
         shell: bash
         run: |
           TAG="v${APP_VERSION}"
+          BODY=$(cat <<EOF
+          نسخه ${APP_VERSION} (versionCode ${APP_CODE})
+
+          - لوگوی جدید رسمی برنامه
+          - ادامه UI مینیمال و حرفه‌ای
+          - دیتای واقعی و آنلاین بازار
+          - منبع اصلی muchToman با fallback خودکار TGJU
+          - اعتبارسنجی نرخ‌ها و رد پاسخ‌های صفر/ناقص
+          - طلا، سکه، ارز و رمزارز
+
+          APK/AAB امضاشده فقط با keystore امن تولید می‌شوند و کلید خصوصی داخل ریپوی عمومی ذخیره نمی‌شود.
+          EOF
+          )
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists"
+            gh release edit "$TAG" --title "قیمت بازار ${APP_VERSION}" --notes "$BODY"
           else
-            gh release create "$TAG" \
-              --target "$GITHUB_SHA" \
-              --title "قیمت بازار ${APP_VERSION}" \
-              --notes "نسخه ${APP_VERSION} (versionCode ${APP_CODE})\n\n- ادامه UI مینیمال و تولیدی 1.3.1\n- دیتای واقعی و آنلاین بازار\n- منبع اصلی muchToman با fallback خودکار TGJU\n- اعتبارسنجی پاسخ و جلوگیری از پذیرش نرخ‌های صفر/ناقص\n- بهبود پایداری دریافت طلا، سکه، ارز و رمزارز\n\nAPK/AAB امضاشده فقط با keystore امن تولید می‌شوند و کلید خصوصی داخل ریپوی عمومی ذخیره نمی‌شود."
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "قیمت بازار ${APP_VERSION}" --notes "$BODY"
           fi
