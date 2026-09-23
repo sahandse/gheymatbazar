@@ -1,4 +1,4 @@
-name: Build Installable APK
+name: Build Release APK
 
 on:
   push:
@@ -27,14 +27,15 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
-      - name: Build installable debug APK
-        run: gradle assembleDebug
+      - name: Build unsigned release APK
+        run: gradle assembleRelease
 
-      - name: Rename APK
+      - name: Rename release APK
         shell: bash
         run: |
-          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
-          cp "$APK" gheymatbazar-1.3.3-installable.apk
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          test -n "$APK"
+          cp "$APK" gheymatbazar-1.3.3-release-unsigned.apk
 
       - name: Package Android signing tools
         shell: bash
@@ -42,16 +43,14 @@ jobs:
           BT=$(find "$ANDROID_SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
           mkdir -p signing-tools/lib
           cp "$BT/apksigner" signing-tools/apksigner
-          cp "$BT/zipalign" signing-tools/zipalign
           cp "$BT/lib/apksigner.jar" signing-tools/lib/apksigner.jar
-          chmod +x signing-tools/apksigner signing-tools/zipalign
-          echo "$BT" > signing-tools/build-tools-path.txt
+          chmod +x signing-tools/apksigner
 
-      - name: Upload APK
+      - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: gheymatbazar-1.3.3-installable
-          path: gheymatbazar-1.3.3-installable.apk
+          name: gheymatbazar-1.3.3-release-unsigned
+          path: gheymatbazar-1.3.3-release-unsigned.apk
           if-no-files-found: error
           retention-days: 30
 
