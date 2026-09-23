@@ -50,7 +50,6 @@ import com.example.ui.components.ConverterBottomSheet
 import com.example.ui.components.MarketRateCard
 import com.example.ui.components.MarketRatesHeader
 import com.example.ui.components.MarketTabs
-import com.example.ui.components.MarketTrendChartCard
 import com.example.ui.components.SettingsBottomSheet
 import com.example.ui.theme.LocalAppPalette
 
@@ -65,7 +64,6 @@ fun HomeScreen(
     onSearchQueryChange: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
     onToggleConverter: () -> Unit,
-    onToggleChart: () -> Unit,
     onOpenSettings: () -> Unit,
     onCloseSettings: () -> Unit,
     onCloseConverter: () -> Unit,
@@ -115,8 +113,6 @@ fun HomeScreen(
                         onRefresh = onRefresh,
                         onToggleConverter = onToggleConverter,
                         isConverterVisible = uiState.showConverter,
-                        onToggleChart = onToggleChart,
-                        isChartVisible = uiState.showChart,
                         onOpenSettings = onOpenSettings
                     )
                     Box(
@@ -209,8 +205,6 @@ fun HomeScreen(
                             onRefresh = onRefresh,
                             onToggleConverter = onToggleConverter,
                             isConverterVisible = uiState.showConverter,
-                            onToggleChart = onToggleChart,
-                            isChartVisible = uiState.showChart,
                             onOpenSettings = onOpenSettings
                         )
                     }
@@ -255,18 +249,6 @@ fun HomeScreen(
                             selectedCategory = uiState.selectedCategory,
                             onCategorySelected = onCategorySelected
                         )
-                    }
-
-                    if (uiState.showChart) {
-                        item(key = "chart") {
-                            MarketTrendChartCard(
-                                category = uiState.selectedCategory,
-                                rates = uiState.rates,
-                                onRateClick = onRateClick,
-                                activeRateId = null,
-                                onClose = onToggleChart
-                            )
-                        }
                     }
 
                     if (query.isNotEmpty()) {

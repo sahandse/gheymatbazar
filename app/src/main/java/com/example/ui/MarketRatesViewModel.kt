@@ -45,7 +45,6 @@ data class MarketRatesUiState(
     val widgetSlot3: String = "COIN_EMAMI",
     val widgetSlot4: String = "USDT",
     val showConverter: Boolean = false,
-    val showChart: Boolean = false,
     val showSettings: Boolean = false
 )
 
@@ -180,7 +179,7 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun selectCategory(category: MarketCategory) {
-        _uiState.update { it.copy(selectedCategory = category, showChart = false) }
+        _uiState.update { it.copy(selectedCategory = category) }
     }
 
     fun selectRate(rateId: String?) {
@@ -225,9 +224,6 @@ class MarketRatesViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.update { it.copy(showConverter = show) }
     }
 
-    fun setShowChart(show: Boolean) {
-        _uiState.update { it.copy(showChart = show) }
-    }
 
     fun setShowSettings(show: Boolean) {
         _uiState.update { it.copy(showSettings = show) }

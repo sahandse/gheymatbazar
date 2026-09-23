@@ -18,7 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,8 +45,6 @@ fun MarketRatesHeader(
     onRefresh: () -> Unit,
     onToggleConverter: () -> Unit,
     isConverterVisible: Boolean,
-    onToggleChart: () -> Unit,
-    isChartVisible: Boolean,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -120,19 +117,6 @@ fun MarketRatesHeader(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "پشتیبانی",
                         tint = palette.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                IconButton(
-                    onClick = onToggleChart,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .testTag("header_chart_toggle_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ShowChart,
-                        contentDescription = "نمودار",
-                        tint = if (isChartVisible) palette.accent else palette.textSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }

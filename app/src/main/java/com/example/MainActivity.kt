@@ -148,7 +148,6 @@ private fun HomeContent(viewModel: MarketRatesViewModel) {
         onSearchQueryChange = { viewModel.setSearchQuery(it) },
         onToggleFavorite = { viewModel.toggleFavorite(it) },
         onToggleConverter = { viewModel.setShowConverter(!uiState.showConverter) },
-        onToggleChart = { viewModel.setShowChart(!uiState.showChart) },
         onOpenSettings = { viewModel.setShowSettings(true) },
         onCloseSettings = { viewModel.setShowSettings(false) },
         onCloseConverter = { viewModel.setShowConverter(false) },

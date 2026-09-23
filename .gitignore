@@ -21,7 +21,4 @@ debug.keystore
 /app/build
 *.apk
 *.aab
-gradlew
-gradlew.bat
-gradle/wrapper/gradle-wrapper.jar
 
