@@ -34,15 +34,18 @@ jobs:
           test -n "$VERSION"
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Build unsigned release APK
-        run: gradle assembleRelease
+      - name: Build unsigned release APK and AAB
+        run: gradle assembleRelease bundleRelease
 
-      - name: Rename release APK
+      - name: Rename release files
         shell: bash
         run: |
           APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -1)
           test -n "$APK"
+          test -n "$AAB"
           cp "$APK" "gheymatbazar-${APP_VERSION}-release-unsigned.apk"
+          cp "$AAB" "gheymatbazar-${APP_VERSION}-release-unsigned.aab"
 
       - name: Package Android signing tools
         shell: bash
@@ -53,11 +56,13 @@ jobs:
           cp "$BT/lib/apksigner.jar" signing-tools/lib/apksigner.jar
           chmod +x signing-tools/apksigner
 
-      - name: Upload unsigned release APK
+      - name: Upload unsigned release files
         uses: actions/upload-artifact@v4
         with:
           name: gheymatbazar-${{ env.APP_VERSION }}-release-unsigned
-          path: gheymatbazar-${{ env.APP_VERSION }}-release-unsigned.apk
+          path: |
+            gheymatbazar-${{ env.APP_VERSION }}-release-unsigned.apk
+            gheymatbazar-${{ env.APP_VERSION }}-release-unsigned.aab
           if-no-files-found: error
           retention-days: 30
 
