@@ -76,7 +76,7 @@ object PriceAlertNotifier {
             )
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_widget_refresh)
+                .setSmallIcon(R.drawable.ic_brand_notification)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setContentIntent(pending)
