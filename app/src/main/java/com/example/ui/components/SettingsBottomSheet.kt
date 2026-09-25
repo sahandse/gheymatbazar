@@ -175,7 +175,7 @@ fun SettingsBottomSheet(
             SettingsSectionCard(
                 icon = Icons.Default.SystemUpdate,
                 title = "به‌روزرسانی برنامه",
-                subtitle = "نسخه رسمی GitHub با نصب مستقیم"
+                subtitle = "نسخه رسمی با نصب مستقیم"
             ) {
                 Text(
                     text = updateStatus ?: "آماده بررسی",
@@ -321,9 +321,9 @@ fun SettingsBottomSheet(
 
                 TextButton(
                     onClick = { GithubAppUpdater.openReleasePage(context) },
-                    modifier = Modifier.testTag("open_github_release_button")
+                    modifier = Modifier.testTag("open_release_page_button")
                 ) {
-                    Text("مشاهده Releaseها در GitHub", color = palette.accent, fontSize = 12.sp)
+                    Text("مشاهده صفحه نسخه‌ها", color = palette.accent, fontSize = 12.sp)
                 }
             }
 
