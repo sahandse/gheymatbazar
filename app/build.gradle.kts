@@ -22,11 +22,11 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.marketrates.irgold"
+    applicationId = "ir.sahandse.gheymatbazar"
     minSdk = 24
     targetSdk = 36
-    versionCode = 14
-    versionName = "1.5.1"
+    versionCode = 15
+    versionName = "1.6.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
